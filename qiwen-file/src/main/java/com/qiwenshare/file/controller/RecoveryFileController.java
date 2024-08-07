@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
 import java.util.List;
+import java.util.Objects;
 
 @Tag(name = "recoveryfile",
      description = "文件删除后会进入回收站，该接口主要是对回收站文件进行管理")
@@ -80,7 +81,7 @@ public class RecoveryFileController
                     .lambda()
                     .eq(RecoveryFile::getUserFileId, userFileId));
 
-            if (recoveryFile != null) {
+            if (Objects.nonNull(recoveryFile)) {
                 asyncTaskComp.deleteUserFile(recoveryFile.getUserFileId());
 
                 recoveryFileService.removeById(recoveryFile.getRecoveryFileId());

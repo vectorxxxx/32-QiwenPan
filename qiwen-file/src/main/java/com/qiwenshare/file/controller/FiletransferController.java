@@ -28,6 +28,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -46,6 +47,7 @@ import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -128,7 +130,7 @@ public class FiletransferController
     public void downloadFile(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, DownloadFileDTO downloadFileDTO) {
         Cookie[] cookieArr = httpServletRequest.getCookies();
         String token = "";
-        if (cookieArr != null) {
+        if (ArrayUtils.isNotEmpty(cookieArr)) {
             for (Cookie cookie : cookieArr) {
                 if ("token".equals(cookie.getName())) {
                     token = cookie.getValue();
@@ -174,7 +176,7 @@ public class FiletransferController
     public void batchDownloadFile(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, BatchDownloadFileDTO batchDownloadFileDTO) {
         Cookie[] cookieArr = httpServletRequest.getCookies();
         String token = "";
-        if (cookieArr != null) {
+        if (ArrayUtils.isNotEmpty(cookieArr)) {
             for (Cookie cookie : cookieArr) {
                 if ("token".equals(cookie.getName())) {
                     token = cookie.getValue();
@@ -222,7 +224,7 @@ public class FiletransferController
     @GetMapping("/preview")
     public void preview(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, PreviewDTO previewDTO) throws IOException {
 
-        if (previewDTO.getPlatform() != null && previewDTO.getPlatform() == 2) {
+        if (Objects.nonNull(previewDTO.getPlatform()) && previewDTO.getPlatform() == 2) {
             filetransferService.previewPictureFile(httpServletResponse, previewDTO);
             return;
         }
@@ -232,7 +234,7 @@ public class FiletransferController
         }
         else {
             Cookie[] cookieArr = httpServletRequest.getCookies();
-            if (cookieArr != null) {
+            if (ArrayUtils.isNotEmpty(cookieArr)) {
                 for (Cookie cookie : cookieArr) {
                     if ("token".equals(cookie.getName())) {
                         token = cookie.getValue();
@@ -310,7 +312,7 @@ public class FiletransferController
             finally {
                 IOUtils.closeQuietly(inputStream);
                 IOUtils.closeQuietly(outputStream);
-                if (downloadFile.getOssClient() != null) {
+                if (Objects.nonNull(downloadFile.getOssClient())) {
                     downloadFile
                             .getOssClient()
                             .shutdown();

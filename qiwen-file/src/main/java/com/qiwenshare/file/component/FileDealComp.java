@@ -61,6 +61,7 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Queue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -155,7 +156,7 @@ public class FileDealComp
         if (qiwenFile.isFile()) {
             qiwenFile = qiwenFile.getParentFile();
         }
-        while (qiwenFile.getParent() != null) {
+        while (StringUtils.isNotEmpty(qiwenFile.getParent())) {
             String fileName = qiwenFile.getName();
             String parentFilePath = qiwenFile.getParent();
 
@@ -351,7 +352,7 @@ public class FileDealComp
      */
     public boolean checkAuthDownloadAndPreview(String shareBatchNum, String extractionCode, String token, String userFileIds, Integer platform) {
         log.debug("权限检查开始：shareBatchNum:{}, extractionCode:{}, token:{}, userFileIds{}", shareBatchNum, extractionCode, token, userFileIds);
-        if (platform != null && platform == 2) {
+        if (Objects.isNull(platform) && platform == 2) {
             return true;
         }
         String[] userFileIdArr = userFileIds.split(",");
@@ -425,7 +426,7 @@ public class FileDealComp
         CopyFile copyFile = new CopyFile();
         copyFile.setExtendName(userFile.getExtendName());
         String fileUrl = copier.copy(downloader.getInputStream(downloadFile), copyFile);
-        if (downloadFile.getOssClient() != null) {
+        if (Objects.nonNull(downloadFile.getOssClient())) {
             downloadFile
                     .getOssClient()
                     .shutdown();
@@ -500,14 +501,14 @@ public class FileDealComp
                         AbstractID3v2Tag id3v2Tag = mp3file.getID3v2TagAsv24();
                         AbstractID3v2Frame frame = (AbstractID3v2Frame) id3v2Tag.getFrame("APIC");
                         FrameBodyAPIC body;
-                        if (frame != null && !frame.isEmpty()) {
+                        if (Objects.nonNull(frame) && !frame.isEmpty()) {
                             body = (FrameBodyAPIC) frame.getBody();
                             byte[] imageData = body.getImageData();
                             music.setAlbumImage(Base64
                                     .getEncoder()
                                     .encodeToString(imageData));
                         }
-                        if (tag != null) {
+                        if (Objects.nonNull(tag)) {
                             music.setArtist(tag.getFirst(FieldKey.ARTIST));
                             music.setTitle(tag.getFirst(FieldKey.TITLE));
                             music.setAlbum(tag.getFirst(FieldKey.ALBUM));
@@ -532,7 +533,7 @@ public class FileDealComp
                     AudioFile f = new FlacFileReader().read(outFile);
                     tag = f.getTag();
                     audioHeader = f.getAudioHeader();
-                    if (tag != null) {
+                    if (Objects.nonNull(tag)) {
                         music.setArtist(StringUtils.join(tag.getFields(FieldKey.ARTIST), ","));
                         music.setTitle(StringUtils.join(tag.getFields(FieldKey.TITLE), ","));
                         music.setAlbum(StringUtils.join(tag.getFields(FieldKey.ALBUM), ","));
@@ -545,7 +546,7 @@ public class FileDealComp
                         music.setAlbumArtist(StringUtils.join(tag.getFields(FieldKey.ALBUM_ARTIST), ","));
                         music.setEncoder(StringUtils.join(tag.getFields(FieldKey.ENCODER), ","));
                         List<Artwork> artworkList = tag.getArtworkList();
-                        if (artworkList != null && !artworkList.isEmpty()) {
+                        if (CollectionUtils.isNotEmpty(artworkList)) {
                             Artwork artwork = artworkList.get(0);
                             byte[] binaryData = artwork.getBinaryData();
                             music.setAlbumImage(Base64
@@ -556,7 +557,7 @@ public class FileDealComp
 
                 }
 
-                if (audioHeader != null) {
+                if (Objects.nonNull(audioHeader)) {
                     music.setTrackLength(Float.parseFloat(audioHeader.getTrackLength() + ""));
                 }
 
@@ -579,7 +580,7 @@ public class FileDealComp
         finally {
             IOUtils.closeQuietly(inputStream);
             IOUtils.closeQuietly(fileOutputStream);
-            if (outFile != null) {
+            if (Objects.nonNull(outFile)) {
                 if (outFile.exists()) {
                     outFile.delete();
                 }

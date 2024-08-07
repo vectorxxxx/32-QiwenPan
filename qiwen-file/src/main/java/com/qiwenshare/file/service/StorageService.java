@@ -48,7 +48,7 @@ public class StorageService extends ServiceImpl<StorageMapper, StorageBean> impl
             totalStorageSize = storageBean.getTotalStorageSize();
         }
 
-        if (totalStorageSize != null) {
+        if (Objects.nonNull(totalStorageSize)) {
             totalStorageSize = totalStorageSize * 1024 * 1024;
         }
         return totalStorageSize;
@@ -75,7 +75,7 @@ public class StorageService extends ServiceImpl<StorageMapper, StorageBean> impl
             totalStorageSize = storageBean.getTotalStorageSize();
         }
 
-        if (totalStorageSize != null) {
+        if (Objects.nonNull(totalStorageSize)) {
             totalStorageSize = totalStorageSize * 1024 * 1024;
         }
 

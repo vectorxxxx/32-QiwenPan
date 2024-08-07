@@ -60,7 +60,7 @@ public class DefaultJwtManager implements JwtManager
     // check if the token is enabled
     @Override
     public boolean tokenEnabled() {
-        return tokenSecret != null && !tokenSecret.isEmpty();
+        return StringUtils.isNotEmpty(tokenSecret);
     }
 
     // read document token
@@ -91,7 +91,7 @@ public class DefaultJwtManager implements JwtManager
         if (tokenEnabled()) {  // check if the token is enabled
             String token = (String) body.get("token");  // get token from the body
             if (StringUtils.isEmpty(token)) {  // if token is empty
-                if (header != null && !StringUtils.isBlank(header)) {  // and the header is defined
+                if (!StringUtils.isBlank(header)) {  // and the header is defined
                     token = header.startsWith("Bearer ") ?
                             header.substring(7) :
                             header;  // get token from the header (it is placed after the Bearer prefix if it exists)

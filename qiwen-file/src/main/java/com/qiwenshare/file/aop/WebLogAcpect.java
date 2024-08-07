@@ -23,6 +23,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * 操作日志切面
@@ -60,7 +61,7 @@ public class WebLogAcpect
         //获取操作
         MyLog myLog = method.getAnnotation(MyLog.class);
 
-        if (myLog != null) {
+        if (Objects.nonNull(myLog)) {
             operation = myLog.operation();
             module = myLog.module();
         }
@@ -80,12 +81,12 @@ public class WebLogAcpect
             String errorMessage = ((RestResult) ret).getMessage();
             JwtUser sessionUser = SessionUtil.getSession();
             String userId = "";
-            if (sessionUser != null) {
+            if (Objects.nonNull(sessionUser)) {
                 userId = sessionUser.getUserId();
             }
 
             Integer code = ((RestResult) ret).getCode();
-            if (code != null && code == 200001) {
+            if (Objects.nonNull(code) && code == 200001) {
                 UserLoginVo data = (UserLoginVo) ((RestResult) ret).getData();
                 userId = data.getUserId();
             }

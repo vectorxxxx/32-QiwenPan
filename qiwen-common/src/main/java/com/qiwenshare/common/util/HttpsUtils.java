@@ -21,6 +21,7 @@ import org.apache.http.ssl.SSLContextBuilder;
 import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.util.CollectionUtils;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
@@ -35,6 +36,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 public class HttpsUtils
 {
@@ -184,7 +186,7 @@ public class HttpsUtils
         HttpEntity httpEntity = null;
         try {
             HttpGet httpGet = new HttpGet(apiUrl);
-            if (header != null) {
+            if (!CollectionUtils.isEmpty(header)) {
                 httpGet.setHeader("Referer", (String) header.get(HttpHeaders.REFERER));
                 httpGet.setHeader("Accept", (String) header.get(HttpHeaders.ACCEPT));
                 httpGet.setHeader("Accept-Encoding", (String) header.get(HttpHeaders.ACCEPT_ENCODING));
@@ -252,7 +254,7 @@ public class HttpsUtils
                 pairList.add(pair);
             }
             httpPost.setEntity(new UrlEncodedFormEntity(pairList, Charset.forName("UTF-8")));
-            if (header != null) {
+            if (!CollectionUtils.isEmpty(header)) {
                 httpPost.setHeader("Referer", (String) header.get(HttpHeaders.REFERER));
                 httpPost.setHeader("Accept", (String) header.get(HttpHeaders.ACCEPT));
                 httpPost.setHeader("Accept-Encoding", (String) header.get(HttpHeaders.ACCEPT_ENCODING));
@@ -273,7 +275,7 @@ public class HttpsUtils
             logger.error(e.getMessage());
         }
         finally {
-            if (response != null) {
+            if (Objects.nonNull(response)) {
                 try {
                     EntityUtils.consume(response.getEntity());
                 }
@@ -323,7 +325,7 @@ public class HttpsUtils
             logger.error(e.getMessage());
         }
         finally {
-            if (response != null) {
+            if (Objects.nonNull(response)) {
                 try {
                     EntityUtils.consume(response.getEntity());
                 }
@@ -347,6 +349,7 @@ public class HttpsUtils
                     .loadTrustMaterial(null, new TrustStrategy()
                     {
 
+                        @Override
                         public boolean isTrusted(X509Certificate[] chain, String authType) throws CertificateException {
                             return true;
                         }

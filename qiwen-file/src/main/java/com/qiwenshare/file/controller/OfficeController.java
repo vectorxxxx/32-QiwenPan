@@ -46,6 +46,7 @@ import java.io.PrintWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Scanner;
 
 @Tag(name = "office",
@@ -203,7 +204,7 @@ public class OfficeController
 
         JSONObject jsonObj = JSON.parseObject(body);
         log.info("===saveeditedfile:" + jsonObj.get("status"));
-        String status = jsonObj != null ?
+        String status = Objects.nonNull(jsonObj) ?
                         jsonObj
                                 .get("status")
                                 .toString() :

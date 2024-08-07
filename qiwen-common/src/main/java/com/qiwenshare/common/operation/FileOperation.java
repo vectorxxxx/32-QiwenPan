@@ -162,7 +162,7 @@ public class FileOperation
 
         }
         finally {
-            if (fileInputStream != null) {
+            if (Objects.nonNull(fileInputStream)) {
                 try {
                     fileInputStream.close();
                 }
@@ -171,7 +171,7 @@ public class FileOperation
                 }
             }
 
-            if (fileOutputStream != null) {
+            if (Objects.nonNull(fileOutputStream)) {
                 try {
                     fileOutputStream.close();
                 }
@@ -323,7 +323,7 @@ public class FileOperation
         }
         finally {
             try {
-                if (writer != null) {
+                if (Objects.nonNull(writer)) {
                     writer.close();
                 }
             }

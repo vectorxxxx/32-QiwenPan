@@ -6,6 +6,7 @@ import com.qiwenshare.file.api.ISysParamService;
 import com.qiwenshare.file.domain.SysParam;
 import com.qiwenshare.file.mapper.SysParamMapper;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -30,7 +31,7 @@ public class SysParamService extends ServiceImpl<SysParamMapper, SysParam> imple
         SysParam sysParam = new SysParam();
         sysParam.setSysParamKey(key);
         List<SysParam> list = sysParamMapper.selectList(new QueryWrapper<>(sysParam));
-        if (list != null && !list.isEmpty()) {
+        if (CollectionUtils.isNotEmpty(list)) {
             return list
                     .get(0)
                     .getSysParamValue();

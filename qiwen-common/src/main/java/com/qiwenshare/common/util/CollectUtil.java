@@ -6,6 +6,7 @@ import org.apache.commons.lang3.StringUtils;
 import javax.servlet.http.HttpServletRequest;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.Objects;
 
 /**
  * 通信工具类
@@ -50,7 +51,7 @@ public class CollectUtil
         catch (UnknownHostException e) {
             log.error("获取本地IP失败");
         }
-        if (addr != null) {
+        if (Objects.nonNull(addr)) {
             ip = addr
                     .getHostAddress()
                     .toString();

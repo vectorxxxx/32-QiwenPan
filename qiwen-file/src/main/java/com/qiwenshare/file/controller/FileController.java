@@ -48,6 +48,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.jetty.util.StringUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -305,7 +306,7 @@ public class FileController
         UserFile userFile = userFileService.getById(renameFileDto.getUserFileId());
 
         List<UserFile> userFiles = userFileService.selectUserFileByNameAndPath(renameFileDto.getFileName(), userFile.getFilePath(), sessionUserBean.getUserId());
-        if (userFiles != null && !userFiles.isEmpty()) {
+        if (org.apache.commons.collections4.CollectionUtils.isNotEmpty(userFiles)) {
             return RestResult
                     .<String>fail()
                     .message("同名文件已存在");
@@ -576,8 +577,9 @@ public class FileController
 
             String[] strArr = filePath.split(QiwenFile.separator);
             for (int j = 0; j < strArr.length; j++) {
-                if (!"".equals(strArr[j]) && strArr[j] != null) {
-                    queue.add(strArr[j]);
+                final String s = strArr[j];
+                if (StringUtils.isNotEmpty(s)) {
+                    queue.add(s);
                 }
 
             }

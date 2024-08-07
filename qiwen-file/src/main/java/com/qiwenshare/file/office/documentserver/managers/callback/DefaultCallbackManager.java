@@ -27,6 +27,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
 
 import java.io.File;
 import java.io.InputStream;
@@ -184,7 +185,7 @@ public class DefaultCallbackManager implements CallbackManager
         params.put("c", method);
         params.put("key", key);
 
-        if (meta != null) {
+        if (CollectionUtils.isEmpty(meta)) {
             params.put("meta", meta);
         }
 

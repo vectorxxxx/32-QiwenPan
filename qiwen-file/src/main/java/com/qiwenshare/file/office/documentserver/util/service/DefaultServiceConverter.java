@@ -32,6 +32,7 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 //TODO: Refactoring
@@ -232,7 +233,7 @@ public class DefaultServiceConverter implements ServiceConverter
         //        JSONObject jsonObj = convertStringToJSON(jsonString);
         JSONObject jsonObj = JSON.parseObject(jsonString);
         Object error = jsonObj.get("error");
-        if (error != null)  // if an error occurs
+        if (Objects.nonNull(error))  // if an error occurs
         {
             processConvertServiceResponceError(Math.toIntExact((long) error));  // then get an error message
         }
@@ -270,7 +271,7 @@ public class DefaultServiceConverter implements ServiceConverter
         BufferedReader bufferedReader = new BufferedReader(inputStreamReader);  // create an object to read incoming streams
         String line = bufferedReader.readLine();  // get incoming streams by lines
 
-        while (line != null) {
+        while (StringUtils.isNotEmpty(line)) {
             stringBuilder.append(line);  // concatenate strings using the string builder
             line = bufferedReader.readLine();
         }

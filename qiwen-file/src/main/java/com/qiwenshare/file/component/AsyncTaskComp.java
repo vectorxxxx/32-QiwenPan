@@ -14,6 +14,7 @@ import com.qiwenshare.ufop.operation.copy.domain.CopyFile;
 import com.qiwenshare.ufop.util.UFOPUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.springframework.beans.factory.annotation.Value;
@@ -74,9 +75,9 @@ public class AsyncTaskComp
 
                 Long filePointCount = getFilePointCount(userFileItem.getFileId());
 
-                if (filePointCount != null && filePointCount == 0 && userFileItem.getIsDir() == 0) {
+                if (Objects.nonNull(filePointCount) && filePointCount == 0 && userFileItem.getIsDir() == 0) {
                     FileBean fileBean = fileMapper.selectById(userFileItem.getFileId());
-                    if (fileBean != null) {
+                    if (Objects.nonNull(fileBean)) {
                         try {
                             filetransferService.deleteFile(fileBean);
                             fileMapper.deleteById(fileBean.getFileId());
@@ -94,7 +95,7 @@ public class AsyncTaskComp
             recoveryFileService.deleteUserFileByDeleteBatchNum(userFile.getDeleteBatchNum());
             Long filePointCount = getFilePointCount(userFile.getFileId());
 
-            if (filePointCount != null && filePointCount == 0 && userFile.getIsDir() == 0) {
+            if (Objects.nonNull(filePointCount) && filePointCount == 0 && userFile.getIsDir() == 0) {
                 FileBean fileBean = fileMapper.selectById(userFile.getFileId());
                 try {
                     filetransferService.deleteFile(fileBean);
@@ -149,7 +150,7 @@ public class AsyncTaskComp
                 param.put("identifier", md5Str);
                 List<FileBean> list = fileMapper.selectByMap(param);
 
-                if (list != null && !list.isEmpty()) { //文件已存在
+                if (CollectionUtils.isNotEmpty(list)) { //文件已存在
                     fileId = list
                             .get(0)
                             .getFileId();

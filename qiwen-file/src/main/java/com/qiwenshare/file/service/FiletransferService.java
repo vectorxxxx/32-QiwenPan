@@ -120,7 +120,7 @@ public class FiletransferService implements IFiletransferService
             qiwenFile = new QiwenFile(filePath, uploadFileDTO.getFilename(), false);
         }
 
-        if (list != null && !list.isEmpty()) {
+        if (CollectionUtils.isNotEmpty(list)) {
             FileBean file = list.get(0);
             UserFile userFile = new UserFile(qiwenFile, SessionUtil.getUserId(), file.getFileId());
 
@@ -147,7 +147,7 @@ public class FiletransferService implements IFiletransferService
             uploadFileVo.setSkipUpload(false);
 
             List<Integer> uploaded = uploadTaskDetailMapper.selectUploadedChunkNumList(uploadFileDTO.getIdentifier());
-            if (uploaded != null && !uploaded.isEmpty()) {
+            if (CollectionUtils.isNotEmpty(uploaded)) {
                 uploadFileVo.setUploaded(uploaded);
             }
             else {

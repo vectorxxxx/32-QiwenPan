@@ -29,6 +29,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 @Service
 @Primary
@@ -52,8 +53,9 @@ public class DefaultFileConfigurer implements FileConfigurer<DefaultFileWrapper>
     @Autowired
     private DefaultEditorConfigConfigurer defaultEditorConfigConfigurer;
 
+    @Override
     public void configure(FileModel fileModel, DefaultFileWrapper wrapper) {  // define the file configurer
-        if (fileModel != null) {  // check if the file model is specified
+        if (Objects.nonNull(fileModel)) {  // check if the file model is specified
             UserFile userFile = wrapper.getUserFile();  // get the fileName parameter from the file wrapper
             Action action = wrapper.getAction();  // get the action parameter from the file wrapper
 

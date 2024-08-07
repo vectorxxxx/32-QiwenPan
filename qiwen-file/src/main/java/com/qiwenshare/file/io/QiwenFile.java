@@ -2,6 +2,7 @@ package com.qiwenshare.file.io;
 
 import com.qiwenshare.ufop.util.UFOPUtils;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * @author VectorX
@@ -28,7 +29,7 @@ public class QiwenFile
         //        if (StringUtils.isEmpty(child)) {
         //            throw new QiwenException("file name format error，parent:" + parent +", child:" + child);
         //        }
-        if (parent != null) {
+        if (StringUtils.isNotEmpty(parent)) {
             String parentPath = separator.equals(formatPath(parent)) ?
                                 "" :
                                 formatPath(parent);
