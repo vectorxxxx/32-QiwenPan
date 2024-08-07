@@ -3,11 +3,10 @@ package com.qiwenshare.file.vo.share;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
-import javax.persistence.Column;
-
-@Schema(description="分享列表VO")
+@Schema(description = "分享列表VO")
 @Data
-public class ShareListVO {
+public class ShareListVO
+{
     private String shareId;
     private String userId;
     private String shareTime;

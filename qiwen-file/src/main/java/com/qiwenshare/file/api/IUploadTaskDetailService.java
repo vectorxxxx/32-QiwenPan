@@ -5,6 +5,7 @@ import com.qiwenshare.file.domain.UploadTaskDetail;
 
 import java.util.List;
 
-public interface IUploadTaskDetailService  extends IService<UploadTaskDetail> {
+public interface IUploadTaskDetailService extends IService<UploadTaskDetail>
+{
     List<Integer> getUploadedChunkNumList(String identifier);
 }

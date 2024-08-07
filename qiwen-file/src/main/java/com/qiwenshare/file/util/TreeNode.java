@@ -9,7 +9,8 @@ import java.util.List;
  * 树节点
  */
 @Data
-public class TreeNode {
+public class TreeNode
+{
     /**
      * 节点id
      */
@@ -32,7 +33,7 @@ public class TreeNode {
     /**
      * 属性集合
      */
-//    private Map<String, String> attributes = new HashMap<>();
+    //    private Map<String, String> attributes = new HashMap<>();
     /**
      * 子节点列表
      */

@@ -7,18 +7,21 @@
 <mapper namespace="com.qiwenshare.file.mapper.CommonFileMapper">
 
     <select id="selectCommonFileUser" parameterType="java.lang.Long" resultType="com.qiwenshare.file.vo.commonfile.CommonFileUser">
-        SELECT c.userId, (SELECT username FROM user WHERE user.userId = c.userId) username FROM commonfile a
-        LEFT JOIN filepermission b ON a.commonFileId = b.commonFileId
-        LEFT JOIN userfile c ON c.userFileId = a.userFileId
+        SELECT c.userId, (SELECT username FROM user WHERE user.userId = c.userId) username
+        FROM commonfile a
+                 LEFT JOIN filepermission b ON a.commonFileId = b.commonFileId
+                 LEFT JOIN userfile c ON c.userFileId = a.userFileId
         WHERE b.userId = #{userId}
     </select>
 
     <select id="selectCommonFileByUser" resultType="com.qiwenshare.file.vo.commonfile.CommonFileListVo">
-        SELECT * FROM commonfile a
-        LEFT JOIN userfile b ON b.userFileId = a.userFileId
-        left join filepermission c on c.commonFileId = a.commonFileId
-        WHERE b.userId = #{userId} and c.userId = #{sessionUserId}
+        SELECT *
+        FROM commonfile a
+                 LEFT JOIN userfile b ON b.userFileId = a.userFileId
+                 left join filepermission c on c.commonFileId = a.commonFileId
+        WHERE b.userId = #{userId}
+          and c.userId = #{sessionUserId}
     </select>
-    
+
 
 </mapper>

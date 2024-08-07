@@ -5,10 +5,15 @@ import lombok.Data;
 
 @Data
 @Schema(name = "公告列表DTO")
-public class NoticeListDTO {
-    @Schema(description = "当前页，从1开始", required = true, example = "1")
+public class NoticeListDTO
+{
+    @Schema(description = "当前页，从1开始",
+            required = true,
+            example = "1")
     private int page;
-    @Schema(description = "页大小", required = true, example = "10")
+    @Schema(description = "页大小",
+            required = true,
+            example = "10")
     private int pageSize;
 
     @Schema(description = "标题")

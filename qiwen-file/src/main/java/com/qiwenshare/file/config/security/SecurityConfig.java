@@ -22,7 +22,8 @@ import org.springframework.security.web.access.intercept.FilterSecurityIntercept
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
-public class SecurityConfig extends WebSecurityConfigurerAdapter {
+public class SecurityConfig extends WebSecurityConfigurerAdapter
+{
 
     @Autowired
     JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
@@ -37,9 +38,11 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     UrlFilterInvocationSecurityMetadataSource urlFilterInvocationSecurityMetadataSource;
     @Autowired
     UrlAccessDecisionManager urlAccessDecisionManager;
+
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-        auth.userDetailsService(userService)
+        auth
+                .userDetailsService(userService)
                 .passwordEncoder(NoOpPasswordEncoder.getInstance());
     }
 
@@ -47,7 +50,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     protected void configure(HttpSecurity httpSecurity) throws Exception {
         httpSecurity
                 //禁用 CSRF
-                .csrf().disable()
+                .csrf()
+                .disable()
 
                 // 授权异常
                 .exceptionHandling()
@@ -65,60 +69,55 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .sessionManagement()
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
 
-
                 .and()
                 .authorizeRequests()
 
                 // 放行静态资源
-                .antMatchers(
-                        HttpMethod.GET,
-                        "/*.html",
-                        "/**/*.html",
-                        "/**/*.css",
-                        "/**/*.js",
-                        "/webSocket/**"
-                ).permitAll()
-
+                .antMatchers(HttpMethod.GET, "/*.html", "/**/*.html", "/**/*.css", "/**/*.js", "/webSocket/**")
+                .permitAll()
 
                 // 放行swagger
-                .antMatchers("/swagger-ui.html").permitAll()
-                .antMatchers("/swagger-resources/**").permitAll()
-                .antMatchers("/webjars/**").permitAll()
-                .antMatchers("/*/api-docs").permitAll()
-                .antMatchers("/h2-console").permitAll()
-                .antMatchers("/h2-console/**").permitAll()
+                .antMatchers("/swagger-ui.html")
+                .permitAll()
+                .antMatchers("/swagger-resources/**")
+                .permitAll()
+                .antMatchers("/webjars/**")
+                .permitAll()
+                .antMatchers("/*/api-docs")
+                .permitAll()
+                .antMatchers("/h2-console")
+                .permitAll()
+                .antMatchers("/h2-console/**")
+                .permitAll()
 
                 // 放行文件访问
-                .antMatchers(HttpMethod.GET, "/upload/**").permitAll()
+                .antMatchers(HttpMethod.GET, "/upload/**")
+                .permitAll()
 
                 // 放行druid
-                .antMatchers("/druid/**").permitAll()
+                .antMatchers("/druid/**")
+                .permitAll()
 
                 // 放行OPTIONS请求
-                .antMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                .antMatchers(HttpMethod.OPTIONS, "/**")
+                .permitAll()
 
                 //允许匿名及登录用户访问
-                .antMatchers("/user/register",
-                        "/user/login",
-                        "/user/checkuserlogininfo",
-                        "/filetransfer/downloadfile",
-                        "/filetransfer/preview",
-                        "/share/sharefileList",
-                        "/share/sharetype",
-                        "/share/checkextractioncode",
-                        "/share/checkendtime",
-                        "/error/**").permitAll()
+                .antMatchers("/user/register", "/user/login", "/user/checkuserlogininfo", "/filetransfer/downloadfile", "/filetransfer/preview", "/share/sharefileList",
+                        "/share/sharetype", "/share/checkextractioncode", "/share/checkendtime", "/error/**")
+                .permitAll()
 
-//                .antMatchers(HttpMethod.GET, "/essaysort/**", "/essay/**", "/remark/**", "/user/**").permitAll()
-//                .antMatchers("/**").permitAll()
+                //                .antMatchers(HttpMethod.GET, "/essaysort/**", "/essay/**", "/remark/**", "/user/**").permitAll()
+                //                .antMatchers("/**").permitAll()
                 // 所有请求都需要认证
-                .anyRequest().authenticated()
+                .anyRequest()
+                .authenticated()
                 .withObjectPostProcessor(filterSecurityInterceptorObjectPostProcessor());
 
-
         // 禁用缓存
-        httpSecurity.headers().cacheControl();
-
+        httpSecurity
+                .headers()
+                .cacheControl();
 
         httpSecurity.addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);//添加JWT身份认证的filter
     }
@@ -129,7 +128,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
      * @return ObjectPostProcessor
      */
     private ObjectPostProcessor<FilterSecurityInterceptor> filterSecurityInterceptorObjectPostProcessor() {
-        return new ObjectPostProcessor<FilterSecurityInterceptor>() {
+        return new ObjectPostProcessor<FilterSecurityInterceptor>()
+        {
             @Override
             public <O extends FilterSecurityInterceptor> O postProcess(O object) {
                 object.setAccessDecisionManager(urlAccessDecisionManager);
@@ -138,8 +138,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
             }
         };
     }
+
     @Bean
-    public InitializingBean initializingBean(){
+    public InitializingBean initializingBean() {
         return () -> SecurityContextHolder.setStrategyName(SecurityContextHolder.MODE_INHERITABLETHREADLOCAL);
     }
 }

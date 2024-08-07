@@ -15,13 +15,15 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @MapperScan("com.qiwenshare.file.mapper")
 @EnableScheduling
 @EnableTransactionManagement
-public class FileApplication {
+public class FileApplication
+{
 
     public static void main(String[] args) {
         SpringApplication.run(FileApplication.class, args);
     }
+
     @Bean
-    public WebServerFactoryCustomizer<ConfigurableWebServerFactory> webServerFactoryCustomizer(){
+    public WebServerFactoryCustomizer<ConfigurableWebServerFactory> webServerFactoryCustomizer() {
         return factory -> {
             ErrorPage error404Page = new ErrorPage(HttpStatus.NOT_FOUND, "/");
             factory.addErrorPages(error404Page);

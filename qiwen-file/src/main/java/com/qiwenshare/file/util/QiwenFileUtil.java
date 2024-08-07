@@ -6,8 +6,8 @@ import com.qiwenshare.common.util.security.SessionUtil;
 import com.qiwenshare.file.domain.UserFile;
 import com.qiwenshare.file.io.QiwenFile;
 
-public class QiwenFileUtil {
-
+public class QiwenFileUtil
+{
 
     public static UserFile getQiwenDir(String userId, String filePath, String fileName) {
         UserFile userFile = new UserFile();

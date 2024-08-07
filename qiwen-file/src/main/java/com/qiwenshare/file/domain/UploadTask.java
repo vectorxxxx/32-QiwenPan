@@ -5,13 +5,19 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
 
 @Data
 @Table(name = "uploadtask")
 @Entity
 @TableName("uploadtask")
-public class UploadTask {
+public class UploadTask
+{
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -22,21 +28,21 @@ public class UploadTask {
     @Column(columnDefinition = "bigint(20) comment '用户id'")
     private String userId;
 
-    @Column(columnDefinition="varchar(200) comment 'md5唯一标识'")
+    @Column(columnDefinition = "varchar(200) comment 'md5唯一标识'")
     private String identifier;
 
-    @Column(columnDefinition="varchar(100) comment '文件名称'")
+    @Column(columnDefinition = "varchar(100) comment '文件名称'")
     private String fileName;
 
-    @Column(columnDefinition="varchar(500) comment '文件路径'")
+    @Column(columnDefinition = "varchar(500) comment '文件路径'")
     private String filePath;
 
-    @Column(columnDefinition="varchar(100) comment '扩展名'")
+    @Column(columnDefinition = "varchar(100) comment '扩展名'")
     private String extendName;
 
-    @Column(columnDefinition="varchar(25) comment '上传时间'")
+    @Column(columnDefinition = "varchar(25) comment '上传时间'")
     private String uploadTime;
 
-    @Column(columnDefinition="int(1) comment '上传状态(1-成功,0-失败或未完成)'")
+    @Column(columnDefinition = "int(1) comment '上传状态(1-成功,0-失败或未完成)'")
     private Integer uploadStatus;
 }

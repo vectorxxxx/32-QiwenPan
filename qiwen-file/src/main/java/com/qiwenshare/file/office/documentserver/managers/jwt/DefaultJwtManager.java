@@ -1,19 +1,12 @@
 /**
- *
  * (c) Copyright Ascensio System SIA 2021
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ * <p>
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
  */
 
 package com.qiwenshare.file.office.documentserver.managers.jwt;
@@ -35,13 +28,14 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 @Component
-public class DefaultJwtManager implements JwtManager {
+public class DefaultJwtManager implements JwtManager
+{
     @Value("${files.docservice.secret}")
     private String tokenSecret;
     @Autowired
     private ObjectMapper objectMapper;
-//    @Autowired
-//    private JSONParser parser;
+    //    @Autowired
+    //    private JSONParser parser;
 
     // create document token
     public String createToken(Map<String, Object> payloadClaims) {
@@ -52,8 +46,11 @@ public class DefaultJwtManager implements JwtManager {
             for (String key : payloadClaims.keySet()) {  // run through all the keys from the payload
                 jwt.addClaim(key, payloadClaims.get(key));  // and write each claim to the jwt
             }
-            return JWT.getEncoder().encode(jwt, signer);  // sign and encode the JWT to a JSON string representation
-        } catch (Exception e) {
+            return JWT
+                    .getEncoder()
+                    .encode(jwt, signer);  // sign and encode the JWT to a JSON string representation
+        }
+        catch (Exception e) {
             return "";
         }
     }
@@ -68,8 +65,11 @@ public class DefaultJwtManager implements JwtManager {
         try {
             // build a HMAC verifier using the token secret
             Verifier verifier = HMACVerifier.newVerifier(tokenSecret);
-            return JWT.getDecoder().decode(token, verifier);  // verify and decode the encoded string JWT to a rich object
-        } catch (Exception exception) {
+            return JWT
+                    .getDecoder()
+                    .decode(token, verifier);  // verify and decode the encoded string JWT to a rich object
+        }
+        catch (Exception exception) {
             return null;
         }
     }
@@ -79,14 +79,17 @@ public class DefaultJwtManager implements JwtManager {
         JSONObject body;
         try {
             body = JSON.parseObject(payload);  // get body parameters by parsing the payload
-        } catch (Exception ex) {
+        }
+        catch (Exception ex) {
             throw new RuntimeException("{\"error\":1,\"message\":\"JSON Parsing error\"}");
         }
         if (tokenEnabled()) {  // check if the token is enabled
             String token = (String) body.get("token");  // get token from the body
             if (token == null) {  // if token is empty
                 if (header != null && !StringUtils.isBlank(header)) {  // and the header is defined
-                    token = header.startsWith("Bearer ") ? header.substring(7) : header;  // get token from the header (it is placed after the Bearer prefix if it exists)
+                    token = header.startsWith("Bearer ") ?
+                            header.substring(7) :
+                            header;  // get token from the header (it is placed after the Bearer prefix if it exists)
                 }
             }
             if (token == null || StringUtils.isBlank(token)) {
@@ -100,17 +103,19 @@ public class DefaultJwtManager implements JwtManager {
             LinkedHashMap<String, Object> claims = null;
             if (jwt.getObject("payload") != null) {  // get payload from the token and check if it is not empty
                 try {
-                    @SuppressWarnings("unchecked") LinkedHashMap<String, Object> jwtPayload =
-                            (LinkedHashMap<String, Object>)jwt.getObject("payload");
+                    @SuppressWarnings("unchecked")
+                    LinkedHashMap<String, Object> jwtPayload = (LinkedHashMap<String, Object>) jwt.getObject("payload");
 
                     claims = jwtPayload;
-                } catch (Exception ex) {
+                }
+                catch (Exception ex) {
                     throw new RuntimeException("{\"error\":1,\"message\":\"Wrong payload\"}");
                 }
             }
             try {
-                body =JSON.parseObject(JSON.toJSONString(claims));
-            } catch (Exception ex) {
+                body = JSON.parseObject(JSON.toJSONString(claims));
+            }
+            catch (Exception ex) {
                 throw new RuntimeException("{\"error\":1,\"message\":\"Parsing error\"}");
             }
         }

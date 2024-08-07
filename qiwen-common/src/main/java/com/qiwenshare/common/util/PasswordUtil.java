@@ -1,11 +1,21 @@
 package com.qiwenshare.common.util;
 
 import java.util.Random;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
+/**
+ * @author VectorX
+ * @version 1.0.0
+ * @description 密码实用程序
+ * @date 2024/08/06
+ */
 public class PasswordUtil
 {
-    public static String getSaltValue() {
+    @Deprecated
+    public static String getSaltValueOld() {
         Random r = new Random();
+
         StringBuilder sb = new StringBuilder(16);
         sb
                 .append(r.nextInt(99999999))
@@ -16,7 +26,24 @@ public class PasswordUtil
                 sb.append("0");
             }
         }
-        String salt = sb.toString();
-        return salt;
+        return sb.toString();
+    }
+
+    /**
+     * 获取盐值
+     *
+     * @return {@link String }
+     */
+    public static String getSaltValue() {
+        final Random r = new Random();
+        return IntStream
+                // 循环 16 次
+                .range(0, 16)
+                // 每一次循环生成一位 0~9 的随机数（能弥补最终位数不足 16 位的情况）
+                .map(i -> r.nextInt(10))
+                // 数字转字符串
+                .mapToObj(String::valueOf)
+                // 拼接字符串
+                .collect(Collectors.joining());
     }
 }

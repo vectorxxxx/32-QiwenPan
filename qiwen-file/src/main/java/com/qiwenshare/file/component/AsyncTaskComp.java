@@ -4,7 +4,6 @@ import com.alibaba.fastjson2.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.qiwenshare.file.api.IFiletransferService;
 import com.qiwenshare.file.api.IRecoveryFileService;
-import com.qiwenshare.file.api.IUserFileService;
 import com.qiwenshare.file.domain.FileBean;
 import com.qiwenshare.file.domain.UserFile;
 import com.qiwenshare.file.io.QiwenFile;
@@ -38,7 +37,8 @@ import java.util.concurrent.Future;
 @Slf4j
 @Component
 @Async("asyncTaskExecutor")
-public class AsyncTaskComp {
+public class AsyncTaskComp
+{
 
     @Resource
     IRecoveryFileService recoveryFileService;
@@ -79,15 +79,16 @@ public class AsyncTaskComp {
                         try {
                             filetransferService.deleteFile(fileBean);
                             fileMapper.deleteById(fileBean.getFileId());
-                        } catch (Exception e) {
+                        }
+                        catch (Exception e) {
                             log.error("删除本地文件失败：" + JSON.toJSONString(fileBean));
                         }
                     }
 
-
                 }
             }
-        } else {
+        }
+        else {
 
             recoveryFileService.deleteUserFileByDeleteBatchNum(userFile.getDeleteBatchNum());
             Long filePointCount = getFilePointCount(userFile.getFileId());
@@ -97,7 +98,8 @@ public class AsyncTaskComp {
                 try {
                     filetransferService.deleteFile(fileBean);
                     fileMapper.deleteById(fileBean.getFileId());
-                } catch (Exception e) {
+                }
+                catch (Exception e) {
                     log.error("删除本地文件失败：" + JSON.toJSONString(fileBean));
                 }
             }
@@ -114,9 +116,11 @@ public class AsyncTaskComp {
         return new AsyncResult<>("checkUserFileId");
     }
 
-
     public Future<String> saveUnzipFile(UserFile userFile, FileBean fileBean, int unzipMode, String entryName, String filePath) {
-        String unzipUrl = UFOPUtils.getTempFile(fileBean.getFileUrl()).getAbsolutePath().replace("." + userFile.getExtendName(), "");
+        String unzipUrl = UFOPUtils
+                .getTempFile(fileBean.getFileUrl())
+                .getAbsolutePath()
+                .replace("." + userFile.getExtendName(), "");
         String totalFileUrl = unzipUrl + entryName;
         File currentFile = new File(totalFileUrl);
 
@@ -124,13 +128,17 @@ public class AsyncTaskComp {
         if (!currentFile.isDirectory()) {
 
             FileInputStream fis = null;
-            String md5Str = UUID.randomUUID().toString();
+            String md5Str = UUID
+                    .randomUUID()
+                    .toString();
             try {
                 fis = new FileInputStream(currentFile);
                 md5Str = DigestUtils.md5Hex(fis);
-            } catch (IOException e) {
+            }
+            catch (IOException e) {
                 e.printStackTrace();
-            } finally {
+            }
+            finally {
                 IOUtils.closeQuietly(fis);
             }
 
@@ -141,41 +149,49 @@ public class AsyncTaskComp {
                 List<FileBean> list = fileMapper.selectByMap(param);
 
                 if (list != null && !list.isEmpty()) { //文件已存在
-                    fileId = list.get(0).getFileId();
-                } else { //文件不存在
+                    fileId = list
+                            .get(0)
+                            .getFileId();
+                }
+                else { //文件不存在
                     fileInputStream = new FileInputStream(currentFile);
                     CopyFile createFile = new CopyFile();
                     createFile.setExtendName(FilenameUtils.getExtension(totalFileUrl));
-                    String saveFileUrl = ufopFactory.getCopier().copy(fileInputStream, createFile);
+                    String saveFileUrl = ufopFactory
+                            .getCopier()
+                            .copy(fileInputStream, createFile);
 
                     FileBean tempFileBean = new FileBean(saveFileUrl, currentFile.length(), storageType, md5Str, userFile.getUserId());
 
                     fileMapper.insert(tempFileBean);
                     fileId = tempFileBean.getFileId();
                 }
-            } catch (IOException e) {
+            }
+            catch (IOException e) {
                 e.printStackTrace();
-            } finally {
+            }
+            finally {
                 IOUtils.closeQuietly(fileInputStream);
                 System.gc();
                 try {
                     Thread.sleep(100);
-                } catch (InterruptedException e) {
+                }
+                catch (InterruptedException e) {
                     e.printStackTrace();
                 }
                 currentFile.delete();
             }
 
-
         }
-
 
         QiwenFile qiwenFile = null;
         if (unzipMode == 0) {
             qiwenFile = new QiwenFile(userFile.getFilePath(), entryName, currentFile.isDirectory());
-        } else if (unzipMode == 1) {
+        }
+        else if (unzipMode == 1) {
             qiwenFile = new QiwenFile(userFile.getFilePath() + "/" + userFile.getFileName(), entryName, currentFile.isDirectory());
-        } else if (unzipMode == 2) {
+        }
+        else if (unzipMode == 2) {
             qiwenFile = new QiwenFile(filePath, entryName, currentFile.isDirectory());
         }
 
@@ -184,7 +200,8 @@ public class AsyncTaskComp {
 
         if (saveUserFile.getIsDir() == 1 && !fileName.equals(saveUserFile.getFileName())) {
             //如果是目录，而且重复，什么也不做
-        } else {
+        }
+        else {
             saveUserFile.setFileName(fileName);
             userFileMapper.insert(saveUserFile);
         }
@@ -192,6 +209,5 @@ public class AsyncTaskComp {
 
         return new AsyncResult<>("saveUnzipFile");
     }
-
 
 }

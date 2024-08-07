@@ -8,7 +8,7 @@ stages:
     displayName: 编译
     strategy: naturally
     trigger: manual
-    executor: []
+    executor: [ ]
     steps:
       - step: build@maven
         name: build_maven
@@ -21,12 +21,12 @@ stages:
           - name: BUILD_ARTIFACT
             path:
               - ./target
-        settings: []
+        settings: [ ]
   - name: stage-285eb1b9
     displayName: 发布
     strategy: naturally
     trigger: manual
-    executor: []
+    executor: [ ]
     steps:
       - step: deploy@agent
         name: deploy_agent

@@ -5,18 +5,24 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
 
 /**
  * 操作日志基础信息类
  *
- * @author ma116
+ * @author VectorX
  */
 @Data
 @Table(name = "operationlog")
 @Entity
 @TableName("operationlog")
-public class OperationLogBean {
+public class OperationLogBean
+{
     /**
      * 操作日志id
      */
@@ -28,13 +34,13 @@ public class OperationLogBean {
     /**
      * 用户id
      */
-    @Column(columnDefinition="varchar(20) comment '用户id'")
+    @Column(columnDefinition = "varchar(20) comment '用户id'")
     private String userId;
 
     /**
      * 操作
      */
-    @Column(columnDefinition="varchar(50) comment '操作'")
+    @Column(columnDefinition = "varchar(50) comment '操作'")
     private String operation;
 
     /**
@@ -45,19 +51,19 @@ public class OperationLogBean {
     /**
      * 终端IP
      */
-    @Column(columnDefinition="varchar(20) comment '终端ip地址'")
+    @Column(columnDefinition = "varchar(20) comment '终端ip地址'")
     private String terminal;
 
     /**
      * 操作结果
      */
-    @Column(columnDefinition="varchar(20) comment '操作结果'")
+    @Column(columnDefinition = "varchar(20) comment '操作结果'")
     private String result;
 
     /**
      * 操作详情
      */
-    @Column(columnDefinition="varchar(100) comment '操作详情'")
+    @Column(columnDefinition = "varchar(100) comment '操作详情'")
     private String detail;
 
     /**
@@ -68,7 +74,7 @@ public class OperationLogBean {
     /**
      * 时间
      */
-    @Column(columnDefinition="varchar(25) comment '操作时间'")
+    @Column(columnDefinition = "varchar(25) comment '操作时间'")
     private String time;
 
     /**
@@ -76,7 +82,7 @@ public class OperationLogBean {
      */
     private Integer logLevel;
 
-    @Column(columnDefinition="int(2) comment '平台(1-社区,2-管理端,3-网盘,4-股票)'")
+    @Column(columnDefinition = "int(2) comment '平台(1-社区,2-管理端,3-网盘,4-股票)'")
     private Integer platform;
 
     private String requestURI;

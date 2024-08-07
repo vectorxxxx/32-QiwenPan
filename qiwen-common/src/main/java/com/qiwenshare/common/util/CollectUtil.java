@@ -9,7 +9,7 @@ import java.net.UnknownHostException;
 /**
  * 通信工具类
  *
- * @author ma116
+ * @author VectorX
  */
 @Slf4j
 public class CollectUtil

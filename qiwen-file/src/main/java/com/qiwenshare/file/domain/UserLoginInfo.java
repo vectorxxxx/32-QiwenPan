@@ -4,11 +4,17 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
+import lombok.experimental.Accessors;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
 
 /**
- * @author MAC
+ * @author VectorX
  * @version 1.0
  * @description: TODO
  * @date 2021/11/18 22:36
@@ -17,7 +23,9 @@ import javax.persistence.*;
 @Table(name = "userlogininfo")
 @Entity
 @TableName("userlogininfo")
-public class UserLoginInfo {
+@Accessors(chain = true)
+public class UserLoginInfo
+{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @TableId(type = IdType.AUTO)

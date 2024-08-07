@@ -29,14 +29,14 @@ import java.util.Map;
  */
 @Aspect
 @Component
-public class WebLogAcpect {
+public class WebLogAcpect
+{
     @Resource
     IOperationLogService operationLogService;
 
     private String operation = "";
     private String module = "";
     private HttpServletRequest request;
-
 
     /**
      * 定义切入点，切入点为com.example.aop下的所有函数
@@ -69,10 +69,10 @@ public class WebLogAcpect {
         ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
         request = attributes.getRequest();
 
-
     }
 
-    @AfterReturning(returning = "ret", pointcut = "webLog()")
+    @AfterReturning(returning = "ret",
+                    pointcut = "webLog()")
     public void doAfterReturning(Object ret) throws Throwable {
 
         if (ret instanceof RestResult) {
@@ -91,26 +91,25 @@ public class WebLogAcpect {
             }
             if (isSuccess) {
 
-                operationLogService.insertOperationLog(
-                        OperationLogUtil.getOperationLogObj(request, userId, "成功", module, operation, "操作成功"));
-            } else {
-                operationLogService.insertOperationLog(
-                        OperationLogUtil.getOperationLogObj(request, userId, "失败", module, operation, errorMessage));
+                operationLogService.insertOperationLog(OperationLogUtil.getOperationLogObj(request, userId, "成功", module, operation, "操作成功"));
+            }
+            else {
+                operationLogService.insertOperationLog(OperationLogUtil.getOperationLogObj(request, userId, "失败", module, operation, errorMessage));
             }
         }
-
 
     }
 
     /**
      * 获取参数Map集合
+     *
      * @param joinPoint
      * @return
      */
     Map<String, Object> getNameAndValue(JoinPoint joinPoint) {
         Map<String, Object> param = new HashMap<>();
         Object[] paramValues = joinPoint.getArgs();
-        String[] paramNames = ((CodeSignature)joinPoint.getSignature()).getParameterNames();
+        String[] paramNames = ((CodeSignature) joinPoint.getSignature()).getParameterNames();
         for (int i = 0; i < paramNames.length; i++) {
             param.put(paramNames[i], paramValues[i]);
         }

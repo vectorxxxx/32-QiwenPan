@@ -1,19 +1,12 @@
 /**
- *
  * (c) Copyright Ascensio System SIA 2021
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ * <p>
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
  */
 
 package com.qiwenshare.file.office.documentserver.util.service;
@@ -59,19 +52,21 @@ public class DefaultServiceConverter implements ServiceConverter
     private JwtManager jwtManager;
     @Autowired
     private FileUtility fileUtility;
-//    @Autowired
-//    private JSONParser parser;
+    //    @Autowired
+    //    private JSONParser parser;
     @Autowired
     private ObjectMapper objectMapper;
 
     @PostConstruct
-    public void init(){
+    public void init() {
         int timeout = Integer.parseInt(docserviceTimeout);  // parse the dcoument service timeout value
-        if (timeout > 0) convertTimeout = timeout;
+        if (timeout > 0) {
+            convertTimeout = timeout;
+        }
     }
 
     @SneakyThrows
-    private String postToServer(Convert body, String headerToken){  // send the POST request to the server
+    private String postToServer(Convert body, String headerToken) {  // send the POST request to the server
         String bodyString = objectMapper.writeValueAsString(body);  // write the body request to the object mapper in the string format
         URL url = null;
         java.net.HttpURLConnection connection = null;
@@ -79,9 +74,9 @@ public class DefaultServiceConverter implements ServiceConverter
         String jsonString = null;
 
         byte[] bodyByte = bodyString.getBytes(StandardCharsets.UTF_8);  // convert body string into bytes
-        try{
+        try {
             // set the request parameters
-            url = new URL(docServiceUrl+docServiceUrlConverter);
+            url = new URL(docServiceUrl + docServiceUrlConverter);
             connection = (java.net.HttpURLConnection) url.openConnection();
             connection.setRequestMethod("POST");
             connection.setDoOutput(true);
@@ -91,11 +86,11 @@ public class DefaultServiceConverter implements ServiceConverter
             connection.setConnectTimeout(convertTimeout);
 
             // check if the token is enabled
-            if (jwtManager.tokenEnabled())
-            {
+            if (jwtManager.tokenEnabled()) {
                 // set the JWT header to the request
                 connection.setRequestProperty(StringUtils.isBlank(documentJwtHeader) ?
-                        "Authorization" : documentJwtHeader, "Bearer " + headerToken);
+                                              "Authorization" :
+                                              documentJwtHeader, "Bearer " + headerToken);
             }
 
             connection.connect();
@@ -106,26 +101,31 @@ public class DefaultServiceConverter implements ServiceConverter
 
             response = connection.getInputStream();  // get the input stream
             jsonString = convertStreamToString(response);  // convert the response stream into a string
-        } finally {
+        }
+        finally {
             connection.disconnect();
             return jsonString;
         }
     }
 
     // get the URL to the converted file
-    public String getConvertedUri(String documentUri, String fromExtension,
-                                  String toExtension, String documentRevisionId,
-                                  String filePass, Boolean isAsync, String lang)
-    {
+    public String getConvertedUri(String documentUri, String fromExtension, String toExtension, String documentRevisionId, String filePass, Boolean isAsync, String lang) {
         // check if the fromExtension parameter is defined; if not, get it from the document url
         fromExtension = fromExtension == null || fromExtension.isEmpty() ?
-                fileUtility.getFileExtension(documentUri) : fromExtension;
+                        fileUtility.getFileExtension(documentUri) :
+                        fromExtension;
 
         // check if the file name parameter is defined; if not, get random uuid for this file
         String title = fileUtility.getFileName(documentUri);
-        title = title == null || title.isEmpty() ? UUID.randomUUID().toString() : title;
+        title = title == null || title.isEmpty() ?
+                UUID
+                        .randomUUID()
+                        .toString() :
+                title;
 
-        documentRevisionId = documentRevisionId == null || documentRevisionId.isEmpty() ? documentUri : documentRevisionId;
+        documentRevisionId = documentRevisionId == null || documentRevisionId.isEmpty() ?
+                             documentUri :
+                             documentRevisionId;
 
         documentRevisionId = generateRevisionId(documentRevisionId);  // create document token
 
@@ -138,12 +138,12 @@ public class DefaultServiceConverter implements ServiceConverter
         body.setTitle(title);
         body.setKey(documentRevisionId);
         body.setFilePass(filePass);
-        if (isAsync)
+        if (isAsync) {
             body.setAsync(true);
+        }
 
         String headerToken = "";
-        if (jwtManager.tokenEnabled())
-        {
+        if (jwtManager.tokenEnabled()) {
             HashMap<String, Object> map = new HashMap<String, Object>();
             map.put("region", lang);
             map.put("url", body.getUrl());
@@ -152,8 +152,9 @@ public class DefaultServiceConverter implements ServiceConverter
             map.put("title", body.getTitle());
             map.put("key", body.getKey());
             map.put("password", body.getFilePass());
-            if (isAsync)
+            if (isAsync) {
                 map.put("async", body.getAsync());
+            }
 
             // add token to the body if it is enabled
             String token = jwtManager.createToken(map);
@@ -170,10 +171,11 @@ public class DefaultServiceConverter implements ServiceConverter
     }
 
     // generate document key
-    public String generateRevisionId(String expectedKey)
-    {
+    public String generateRevisionId(String expectedKey) {
         if (expectedKey.length() > 20)  // if the expected key length is greater than 20
+        {
             expectedKey = Integer.toString(expectedKey.hashCode());  // the expected key is hashed and a fixed length value is stored in the string format
+        }
 
         String key = expectedKey.replace("[^0-9-.a-zA-Z_=]", "_");
 
@@ -187,8 +189,7 @@ public class DefaultServiceConverter implements ServiceConverter
         String errorMessageTemplate = "Error occurred in the ConvertService: ";
 
         // add the error message to the error message template depending on the error code
-        switch (errorCode)
-        {
+        switch (errorCode) {
             case -8:
                 errorMessage = errorMessageTemplate + "Error document VKey";
                 break;
@@ -226,11 +227,13 @@ public class DefaultServiceConverter implements ServiceConverter
     @SneakyThrows
     private String getResponseUri(String jsonString)  // get the response URL
     {
-//        JSONObject jsonObj = convertStringToJSON(jsonString);
+        //        JSONObject jsonObj = convertStringToJSON(jsonString);
         JSONObject jsonObj = JSON.parseObject(jsonString);
         Object error = jsonObj.get("error");
         if (error != null)  // if an error occurs
-            processConvertServiceResponceError(Math.toIntExact((long)error));  // then get an error message
+        {
+            processConvertServiceResponceError(Math.toIntExact((long) error));  // then get an error message
+        }
 
         // check if the conversion is completed and save the result to a variable
         Boolean isEndConvert = (Boolean) jsonObj.get("endConvert");
@@ -246,10 +249,14 @@ public class DefaultServiceConverter implements ServiceConverter
         else  // if the conversion isn't completed
         {
             resultPercent = (Long) jsonObj.get("percent");
-            resultPercent = resultPercent >= 100l ? 99l : resultPercent;  // get the percentage value of the conversion process
+            resultPercent = resultPercent >= 100l ?
+                            99l :
+                            resultPercent;  // get the percentage value of the conversion process
         }
 
-        return resultPercent >= 100l ? responseUri : "";
+        return resultPercent >= 100l ?
+               responseUri :
+               "";
     }
 
     @SneakyThrows
@@ -260,8 +267,7 @@ public class DefaultServiceConverter implements ServiceConverter
         BufferedReader bufferedReader = new BufferedReader(inputStreamReader);  // create an object to read incoming streams
         String line = bufferedReader.readLine();  // get incoming streams by lines
 
-        while (line != null)
-        {
+        while (line != null) {
             stringBuilder.append(line);  // concatenate strings using the string builder
             line = bufferedReader.readLine();
         }

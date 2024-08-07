@@ -1,6 +1,5 @@
 package com.qiwenshare.file.config.threadpool;
 
-
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.aop.interceptor.AsyncUncaughtExceptionHandler;
@@ -23,15 +22,15 @@ import java.util.concurrent.ThreadPoolExecutor;
 @EnableAsync
 @Component
 @EnableConfigurationProperties(AsyncThreadPoolProperties.class)
-public class AsyncThreadPoolAutoConfiguration implements AsyncConfigurer {
+public class AsyncThreadPoolAutoConfiguration implements AsyncConfigurer
+{
 
     @Autowired
     private AsyncThreadPoolProperties asyncThreadPoolProperties;
 
     /**
-     * 定义线程池
-     * 使用{@link java.util.concurrent.LinkedBlockingQueue}(FIFO）队列，是一个用于并发环境下的阻塞队列集合类
-     * ThreadPoolTaskExecutor不是完全被IOC容器管理的bean,可以在方法上加上@Bean注解交给容器管理,这样可以将taskExecutor.initialize()方法调用去掉，容器会自动调用
+     * 定义线程池 使用{@link java.util.concurrent.LinkedBlockingQueue}(FIFO）队列，是一个用于并发环境下的阻塞队列集合类 ThreadPoolTaskExecutor不是完全被IOC容器管理的bean,可以在方法上加上@Bean注解交给容器管理,这样可以将taskExecutor
+     * .initialize()方法调用去掉，容器会自动调用
      *
      * @return
      */
@@ -39,17 +38,27 @@ public class AsyncThreadPoolAutoConfiguration implements AsyncConfigurer {
     @Override
     public Executor getAsyncExecutor() {
         //Java虚拟机可用的处理器数
-        int processors = Runtime.getRuntime().availableProcessors();
+        int processors = Runtime
+                .getRuntime()
+                .availableProcessors();
         //定义线程池
         ThreadPoolTaskExecutor taskExecutor = new ThreadPoolTaskExecutor();
         //核心线程数
-        taskExecutor.setCorePoolSize(Objects.nonNull(asyncThreadPoolProperties.getCorePoolSize()) ? asyncThreadPoolProperties.getCorePoolSize() : processors);
+        taskExecutor.setCorePoolSize(Objects.nonNull(asyncThreadPoolProperties.getCorePoolSize()) ?
+                                     asyncThreadPoolProperties.getCorePoolSize() :
+                                     processors);
         //线程池最大线程数,默认：40000
-        taskExecutor.setMaxPoolSize(Objects.nonNull(asyncThreadPoolProperties.getMaxPoolSize()) ? asyncThreadPoolProperties.getMaxPoolSize() : 40000);
+        taskExecutor.setMaxPoolSize(Objects.nonNull(asyncThreadPoolProperties.getMaxPoolSize()) ?
+                                    asyncThreadPoolProperties.getMaxPoolSize() :
+                                    40000);
         //线程队列最大线程数,默认：80000
-        taskExecutor.setQueueCapacity(Objects.nonNull(asyncThreadPoolProperties.getMaxPoolSize()) ? asyncThreadPoolProperties.getMaxPoolSize() : 80000);
+        taskExecutor.setQueueCapacity(Objects.nonNull(asyncThreadPoolProperties.getMaxPoolSize()) ?
+                                      asyncThreadPoolProperties.getMaxPoolSize() :
+                                      80000);
         //线程名称前缀
-        taskExecutor.setThreadNamePrefix(StringUtils.isNotEmpty(asyncThreadPoolProperties.getThreadNamePrefix()) ? asyncThreadPoolProperties.getThreadNamePrefix() : "Async-ThreadPool-");
+        taskExecutor.setThreadNamePrefix(StringUtils.isNotEmpty(asyncThreadPoolProperties.getThreadNamePrefix()) ?
+                                         asyncThreadPoolProperties.getThreadNamePrefix() :
+                                         "Async-ThreadPool-");
         //线程池中线程最大空闲时间，默认：60，单位：秒
         taskExecutor.setKeepAliveSeconds(asyncThreadPoolProperties.getKeepAliveSeconds());
         //核心线程是否允许超时，默认:false

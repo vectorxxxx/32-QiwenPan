@@ -4,7 +4,7 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 
 /**
- * @author MAC
+ * @author VectorX
  * @version 1.0
  * <p>
  * cookie工具类

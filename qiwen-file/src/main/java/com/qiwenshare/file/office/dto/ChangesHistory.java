@@ -7,7 +7,8 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class ChangesHistory {
+public class ChangesHistory
+{
     private String created;
     private ChangesUser user;
 }

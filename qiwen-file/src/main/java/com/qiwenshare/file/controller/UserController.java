@@ -1,9 +1,9 @@
 package com.qiwenshare.file.controller;
 
-import cn.hutool.core.bean.BeanUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.qiwenshare.common.anno.MyLog;
 import com.qiwenshare.common.result.RestResult;
+import com.qiwenshare.common.result.ResultCodeEnum;
 import com.qiwenshare.common.util.DateUtil;
 import com.qiwenshare.common.util.HashUtils;
 import com.qiwenshare.common.util.security.JwtUser;
@@ -11,9 +11,11 @@ import com.qiwenshare.common.util.security.SessionUtil;
 import com.qiwenshare.file.api.IUserLoginInfoService;
 import com.qiwenshare.file.api.IUserService;
 import com.qiwenshare.file.component.JwtComp;
+import com.qiwenshare.file.constant.HashAlgorithmType;
 import com.qiwenshare.file.domain.UserLoginInfo;
 import com.qiwenshare.file.domain.user.UserBean;
 import com.qiwenshare.file.dto.user.RegisterDTO;
+import com.qiwenshare.file.util.BeanCopyUtils;
 import com.qiwenshare.file.vo.user.UserLoginVo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -25,13 +27,13 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
 import javax.validation.Valid;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 @Tag(name = "user",
      description = "该接口为用户接口，主要做用户登录，注册和校验token")
@@ -40,13 +42,12 @@ import java.util.Map;
 @RequestMapping("/user")
 public class UserController
 {
-
     @Resource
-    IUserService userService;
+    private IUserService userService;
     @Resource
-    IUserLoginInfoService userLoginInfoService;
+    private IUserLoginInfoService userLoginInfoService;
     @Resource
-    JwtComp jwtComp;
+    private JwtComp jwtComp;
 
     public static Map<String, String> verificationCodeMap = new HashMap<>();
 
@@ -58,16 +59,11 @@ public class UserController
     @PostMapping(value = "/register")
     @MyLog(operation = "用户注册",
            module = CURRENT_MODULE)
-    @ResponseBody
     public RestResult<String> addUser(@Valid
                                       @RequestBody
                                               RegisterDTO registerDTO) {
-        RestResult<String> restResult = null;
-        UserBean userBean = new UserBean();
-        BeanUtil.copyProperties(registerDTO, userBean);
-        restResult = userService.registerUser(userBean);
-
-        return restResult;
+        UserBean userBean = BeanCopyUtils.copy(registerDTO, UserBean.class);
+        return userService.registerUser(userBean);
     }
 
     @Operation(summary = "用户登录",
@@ -76,22 +72,22 @@ public class UserController
     @GetMapping("/login")
     @MyLog(operation = "用户登录",
            module = CURRENT_MODULE)
-    @ResponseBody
     public RestResult<UserLoginVo> userLogin(
             @Parameter(description = "登录手机号")
                     String telephone,
             @Parameter(description = "登录密码")
                     String password) {
-        RestResult<UserLoginVo> restResult = new RestResult<UserLoginVo>();
+        // 验证手机号和密码
         String salt = userService.getSaltByTelephone(telephone);
-        String hashPassword = HashUtils.hashHex("MD5", password, salt, 1024);
+        String hashPassword = HashUtils.hashHex(HashAlgorithmType.MD5.name(), password, salt, 1024);
         UserBean result = userService.selectUserByTelephoneAndPassword(telephone, hashPassword);
-        if (result == null) {
+        if (Objects.isNull(result)) {
             return RestResult
-                    .fail()
+                    .<UserLoginVo>fail()
                     .message("手机号或密码错误！");
         }
 
+        // 生成 jwt
         Map<String, Object> param = new HashMap<>();
         param.put("userId", result.getUserId());
         String token = "";
@@ -99,23 +95,28 @@ public class UserController
             token = jwtComp.createJWT(param);
         }
         catch (Exception e) {
-            log.info("登录失败：{}", e);
+            log.info("登录失败：{}", e.getMessage(), e);
             return RestResult
-                    .fail()
+                    .<UserLoginVo>fail()
                     .message("创建token失败！");
         }
+
+        // 根据手机号获取用户信息
         UserBean sessionUserBean = userService.findUserInfoByTelephone(telephone);
-        if (sessionUserBean.getAvailable() != null && sessionUserBean.getAvailable() == 0) {
+        final Integer available = sessionUserBean.getAvailable();
+        if (Objects.nonNull(available) && available.compareTo(0) == 0) {
             return RestResult
-                    .fail()
+                    .<UserLoginVo>fail()
                     .message("用户已被禁用");
         }
-        UserLoginVo userLoginVo = new UserLoginVo();
-        BeanUtil.copyProperties(sessionUserBean, userLoginVo);
-        userLoginVo.setToken("Bearer " + token);
+
+        // 封装返回值
+        UserLoginVo userLoginVo = BeanCopyUtils.copy(sessionUserBean, UserLoginVo.class);
+        userLoginVo.setToken("Bearer ".concat(token));
+        RestResult<UserLoginVo> restResult = new RestResult<>();
         restResult.setData(userLoginVo);
         restResult.setSuccess(true);
-        restResult.setCode(200001);
+        restResult.setCode(ResultCodeEnum.USER_FORBIDDEN.getCode());
         return restResult;
 
     }
@@ -124,74 +125,59 @@ public class UserController
                description = "验证token的有效性",
                tags = {"user"})
     @GetMapping("/checkuserlogininfo")
-    @ResponseBody
     public RestResult<UserLoginVo> checkUserLoginInfo(
             @RequestHeader("token")
                     String token) {
-        UserLoginVo userLoginVo = new UserLoginVo();
+        // 通过token获取用户id
         String userId = userService.getUserIdByToken(token);
-
-        if (StringUtils.isNotEmpty(userId)) {
-            LambdaQueryWrapper<UserLoginInfo> lambdaQueryWrapper = new LambdaQueryWrapper<>();
-            lambdaQueryWrapper.eq(UserLoginInfo::getUserId, userId);
-            lambdaQueryWrapper.likeRight(UserLoginInfo::getUserloginDate, DateUtil
-                    .getCurrentTime()
-                    .substring(0, 10));
-            userLoginInfoService.remove(lambdaQueryWrapper);
-            UserLoginInfo userLoginInfo = new UserLoginInfo();
-            userLoginInfo.setUserId(userId);
-            userLoginInfo.setUserloginDate(DateUtil.getCurrentTime());
-            userLoginInfoService.save(userLoginInfo);
-            UserBean user = userService.getById(userId);
-            BeanUtil.copyProperties(user, userLoginVo);
-            if (StringUtils.isEmpty(user.getWxOpenId())) {
-                userLoginVo.setHasWxAuth(false);
-            }
-            else {
-                userLoginVo.setHasWxAuth(true);
-            }
+        if (StringUtils.isEmpty(userId)) {
             return RestResult
-                    .success()
-                    .data(userLoginVo);
-
-        }
-        else {
-            return RestResult
-                    .fail()
+                    .<UserLoginVo>fail()
                     .message("用户暂未登录");
         }
 
+        // 更新用户登录信息
+        userLoginInfoService.remove(new LambdaQueryWrapper<UserLoginInfo>()
+                .eq(UserLoginInfo::getUserId, userId)
+                .likeRight(UserLoginInfo::getUserloginDate, DateUtil
+                        .getCurrentTime()
+                        .substring(0, 10)));
+        userLoginInfoService.save(new UserLoginInfo()
+                .setUserId(userId)
+                .setUserloginDate(DateUtil.getCurrentTime()));
+
+        // 获取用户信息
+        UserBean user = userService.getById(userId);
+        UserLoginVo userLoginVo = Objects
+                .requireNonNull(BeanCopyUtils.copy(user, UserLoginVo.class))
+                .setHasWxAuth(StringUtils.isNotEmpty(user.getWxOpenId()));
+
+        // 封装返回值
+        return RestResult
+                .<UserLoginVo>success()
+                .data(userLoginVo);
     }
 
     @Operation(summary = "检查微信认证",
                description = "检查微信认证",
                tags = {"user"})
     @GetMapping("/checkWxAuth")
-    @ResponseBody
     public RestResult<Boolean> checkWxAuth() {
+        // 获取用户 Session 信息
         JwtUser sessionUserBean = SessionUtil.getSession();
-
-        if (sessionUserBean != null && !"anonymousUser".equals(sessionUserBean.getUsername())) {
-            UserBean user = userService.getById(sessionUserBean.getUserId());
-
-            if (StringUtils.isEmpty(user.getWxOpenId())) {
-                return RestResult
-                        .success()
-                        .data(false);
-            }
-            else {
-                return RestResult
-                        .success()
-                        .data(true);
-            }
-
-        }
-        else {
+        if (sessionUserBean == null || "anonymousUser".equals(sessionUserBean.getUsername())) {
             return RestResult
-                    .fail()
+                    .<Boolean>fail()
                     .message("用户暂未登录");
         }
 
+        // 获取用户信息
+        UserBean user = userService.getById(sessionUserBean.getUserId());
+
+        // 封装返回值
+        return RestResult
+                .<Boolean>success()
+                .data(StringUtils.isNotEmpty(user.getWxOpenId()));
     }
 
 }

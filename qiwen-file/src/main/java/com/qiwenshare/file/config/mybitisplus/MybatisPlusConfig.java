@@ -8,7 +8,8 @@ import org.springframework.context.annotation.Configuration;
 
 //Spring boot方式
 @Configuration
-public class MybatisPlusConfig {
+public class MybatisPlusConfig
+{
     // 最新版
     @Bean
     public MybatisPlusInterceptor mybatisPlusInterceptor() {

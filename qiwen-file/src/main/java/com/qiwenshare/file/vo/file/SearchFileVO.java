@@ -6,13 +6,14 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * @author MAC
+ * @author VectorX
  * @version 1.0
  * @description: TODO
  * @date 2022/4/10 11:04
  */
 @Data
-public class SearchFileVO {
+public class SearchFileVO
+{
     private String userFileId;
     private String fileName;
     private String filePath;

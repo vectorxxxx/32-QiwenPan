@@ -7,11 +7,10 @@ import com.qiwenshare.file.domain.user.UserBean;
 
 import java.util.List;
 
-public interface IUserService extends IService<UserBean> {
-
+public interface IUserService extends IService<UserBean>
+{
 
     String getUserIdByToken(String token);
-
 
     /**
      * 用户注册
@@ -21,17 +20,12 @@ public interface IUserService extends IService<UserBean> {
      */
     RestResult<String> registerUser(UserBean userBean);
 
-
-
     UserBean findUserInfoByTelephone(String telephone);
+
     List<Role> selectRoleListByUserId(String userId);
+
     String getSaltByTelephone(String telephone);
+
     UserBean selectUserByTelephoneAndPassword(String username, String password);
-
-
-
-
-
-
 
 }

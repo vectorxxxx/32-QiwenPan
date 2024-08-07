@@ -12,7 +12,11 @@ import com.qiwenshare.file.api.IShareFileService;
 import com.qiwenshare.file.api.IShareService;
 import com.qiwenshare.file.api.IUserService;
 import com.qiwenshare.file.config.es.FileSearch;
-import com.qiwenshare.file.domain.*;
+import com.qiwenshare.file.domain.FileBean;
+import com.qiwenshare.file.domain.Music;
+import com.qiwenshare.file.domain.Share;
+import com.qiwenshare.file.domain.ShareFile;
+import com.qiwenshare.file.domain.UserFile;
 import com.qiwenshare.file.io.QiwenFile;
 import com.qiwenshare.file.mapper.FileMapper;
 import com.qiwenshare.file.mapper.MusicMapper;
@@ -51,7 +55,11 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.*;
+import java.util.Base64;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
@@ -60,7 +68,8 @@ import java.util.concurrent.Executors;
  */
 @Slf4j
 @Component
-public class FileDealComp {
+public class FileDealComp
+{
     @Resource
     private UserFileMapper userFileMapper;
     @Resource
@@ -83,8 +92,7 @@ public class FileDealComp {
     /**
      * 获取重复文件名
      * <p>
-     * 场景1: 文件还原时，在 savefilePath 路径下，保存 测试.txt 文件重名，则会生成 测试(1).txt
-     * 场景2： 上传文件时，在 savefilePath 路径下，保存 测试.txt 文件重名，则会生成 测试(1).txt
+     * 场景1: 文件还原时，在 savefilePath 路径下，保存 测试.txt 文件重名，则会生成 测试(1).txt 场景2： 上传文件时，在 savefilePath 路径下，保存 测试.txt 文件重名，则会生成 测试(1).txt
      *
      * @param userFile
      * @param savefilePath
@@ -97,7 +105,8 @@ public class FileDealComp {
         String userId = userFile.getUserId();
         int isDir = userFile.getIsDir();
         LambdaQueryWrapper<UserFile> lambdaQueryWrapper = new LambdaQueryWrapper<>();
-        lambdaQueryWrapper.eq(UserFile::getFilePath, savefilePath)
+        lambdaQueryWrapper
+                .eq(UserFile::getFilePath, savefilePath)
                 .eq(UserFile::getDeleteFlag, 0)
                 .eq(UserFile::getUserId, userId)
                 .eq(UserFile::getFileName, fileName)
@@ -115,7 +124,8 @@ public class FileDealComp {
         while (!CollectionUtils.isEmpty(list)) {
             i++;
             LambdaQueryWrapper<UserFile> lambdaQueryWrapper1 = new LambdaQueryWrapper<>();
-            lambdaQueryWrapper1.eq(UserFile::getFilePath, savefilePath)
+            lambdaQueryWrapper1
+                    .eq(UserFile::getFilePath, savefilePath)
                     .eq(UserFile::getDeleteFlag, 0)
                     .eq(UserFile::getUserId, userId)
                     .eq(UserFile::getFileName, fileName + "(" + i + ")")
@@ -134,8 +144,7 @@ public class FileDealComp {
     /**
      * 还原父文件路径
      * <p>
-     * 1、回收站文件还原操作会将文件恢复到原来的路径下,当还原文件的时候，如果父目录已经不存在了，则需要把父母录给还原
-     * 2、上传目录
+     * 1、回收站文件还原操作会将文件恢复到原来的路径下,当还原文件的时候，如果父目录已经不存在了，则需要把父母录给还原 2、上传目录
      *
      * @param sessionUserId
      */
@@ -149,7 +158,8 @@ public class FileDealComp {
             String parentFilePath = qiwenFile.getParent();
 
             LambdaQueryWrapper<UserFile> lambdaQueryWrapper = new LambdaQueryWrapper<>();
-            lambdaQueryWrapper.eq(UserFile::getFilePath, parentFilePath)
+            lambdaQueryWrapper
+                    .eq(UserFile::getFilePath, parentFilePath)
                     .eq(UserFile::getFileName, fileName)
                     .eq(UserFile::getDeleteFlag, 0)
                     .eq(UserFile::getIsDir, 1)
@@ -159,14 +169,14 @@ public class FileDealComp {
                 UserFile userFile = QiwenFileUtil.getQiwenDir(sessionUserId, parentFilePath, fileName);
                 try {
                     userFileMapper.insert(userFile);
-                } catch (Exception e) {
+                }
+                catch (Exception e) {
                     //ignore
                 }
             }
             qiwenFile = new QiwenFile(parentFilePath, true);
         }
     }
-
 
     /**
      * 删除重复的子目录文件
@@ -180,7 +190,8 @@ public class FileDealComp {
         log.debug("删除子目录：" + filePath);
         LambdaQueryWrapper<UserFile> lambdaQueryWrapper = new LambdaQueryWrapper<>();
 
-        lambdaQueryWrapper.select(UserFile::getFileName, UserFile::getFilePath)
+        lambdaQueryWrapper
+                .select(UserFile::getFileName, UserFile::getFilePath)
                 .likeRight(UserFile::getFilePath, QiwenFileUtil.formatLikePath(filePath))
                 .eq(UserFile::getIsDir, 1)
                 .eq(UserFile::getDeleteFlag, 0)
@@ -191,12 +202,15 @@ public class FileDealComp {
 
         for (UserFile userFile : repeatList) {
             LambdaQueryWrapper<UserFile> lambdaQueryWrapper1 = new LambdaQueryWrapper<>();
-            lambdaQueryWrapper1.eq(UserFile::getFilePath, userFile.getFilePath())
+            lambdaQueryWrapper1
+                    .eq(UserFile::getFilePath, userFile.getFilePath())
                     .eq(UserFile::getFileName, userFile.getFileName())
                     .eq(UserFile::getDeleteFlag, "0");
             List<UserFile> userFiles = userFileMapper.selectList(lambdaQueryWrapper1);
             for (int i = 0; i < userFiles.size() - 1; i++) {
-                userFileMapper.deleteById(userFiles.get(i).getUserFileId());
+                userFileMapper.deleteById(userFiles
+                        .get(i)
+                        .getUserFileId());
             }
         }
     }
@@ -231,7 +245,8 @@ public class FileDealComp {
 
             childrenTreeNodes.add(resultTreeNode);
 
-        } else {  //2、如果有，则跳过
+        }
+        else {  //2、如果有，则跳过
             nodeNameQueue.poll();
         }
 
@@ -247,7 +262,8 @@ public class FileDealComp {
                 }
 
             }
-        } else {
+        }
+        else {
             treeNode.setChildren(childrenTreeNodes);
         }
 
@@ -271,17 +287,16 @@ public class FileDealComp {
                     isExistPath = true;
                 }
             }
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             e.printStackTrace();
         }
-
 
         return isExistPath;
     }
 
-
     public void uploadESByUserFileId(String userFileId) {
-        exec.execute(()->{
+        exec.execute(() -> {
             try {
 
                 Map<String, Object> param = new HashMap<>();
@@ -300,13 +315,16 @@ public class FileDealComp {
                     fileSearch.setContent(content);
 
                 }*/
-                    elasticsearchClient.index(i -> i.index("filesearch").id(fileSearch.getUserFileId()).document(fileSearch));
+                    elasticsearchClient.index(i -> i
+                            .index("filesearch")
+                            .id(fileSearch.getUserFileId())
+                            .document(fileSearch));
                 }
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
                 log.debug("ES更新操作失败，请检查配置");
             }
         });
-
 
     }
 
@@ -316,11 +334,11 @@ public class FileDealComp {
                 elasticsearchClient.delete(d -> d
                         .index("filesearch")
                         .id(userFileId));
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
                 log.debug("ES删除操作失败，请检查配置");
             }
         });
-
 
     }
 
@@ -329,11 +347,7 @@ public class FileDealComp {
      *
      * @return
      */
-    public boolean checkAuthDownloadAndPreview(String shareBatchNum,
-                                               String extractionCode,
-                                               String token,
-                                               String userFileIds,
-                                               Integer platform) {
+    public boolean checkAuthDownloadAndPreview(String shareBatchNum, String extractionCode, String token, String userFileIds, Integer platform) {
         log.debug("权限检查开始：shareBatchNum:{}, extractionCode:{}, token:{}, userFileIds{}", shareBatchNum, extractionCode, token, userFileIds);
         if (platform != null && platform == 2) {
             return true;
@@ -352,11 +366,14 @@ public class FileDealComp {
                 }
                 log.debug("文件所属用户id：" + userFile.getUserId());
                 log.debug("登录用户id:" + userId);
-                if (!userFile.getUserId().equals(userId)) {
+                if (!userFile
+                        .getUserId()
+                        .equals(userId)) {
                     log.info("用户id不一致，权限校验失败");
                     return false;
                 }
-            } else {
+            }
+            else {
                 Map<String, Object> param = new HashMap<>();
                 param.put("shareBatchNum", shareBatchNum);
                 List<Share> shareList = shareService.listByMap(param);
@@ -365,10 +382,15 @@ public class FileDealComp {
                     log.info("分享批次号不存在，权限校验失败");
                     return false;
                 }
-                Integer shareType = shareList.get(0).getShareType();
+                Integer shareType = shareList
+                        .get(0)
+                        .getShareType();
                 if (1 == shareType) {
                     //判断提取码
-                    if (!shareList.get(0).getExtractionCode().equals(extractionCode)) {
+                    if (!shareList
+                            .get(0)
+                            .getExtractionCode()
+                            .equals(extractionCode)) {
                         log.info("提取码错误，权限校验失败");
                         return false;
                     }
@@ -387,8 +409,7 @@ public class FileDealComp {
     }
 
     /**
-     * 拷贝文件
-     * 场景：修改的文件被多处引用时，需要重新拷贝一份，然后在新的基础上修改
+     * 拷贝文件 场景：修改的文件被多处引用时，需要重新拷贝一份，然后在新的基础上修改
      *
      * @param fileBean
      * @param userFile
@@ -403,7 +424,9 @@ public class FileDealComp {
         copyFile.setExtendName(userFile.getExtendName());
         String fileUrl = copier.copy(downloader.getInputStream(downloadFile), copyFile);
         if (downloadFile.getOssClient() != null) {
-            downloadFile.getOssClient().shutdown();
+            downloadFile
+                    .getOssClient()
+                    .shutdown();
         }
         fileBean.setFileUrl(fileUrl);
         fileBean.setFileId(IdUtil.getSnowflakeNextIdStr());
@@ -419,7 +442,9 @@ public class FileDealComp {
     public String getIdentifierByFile(String fileUrl, int storageType) throws IOException {
         DownloadFile downloadFile = new DownloadFile();
         downloadFile.setFileUrl(fileUrl);
-        InputStream inputStream = ufopFactory.getDownloader(storageType).getInputStream(downloadFile);
+        InputStream inputStream = ufopFactory
+                .getDownloader(storageType)
+                .getInputStream(downloadFile);
         return DigestUtils.md5Hex(inputStream);
     }
 
@@ -434,7 +459,8 @@ public class FileDealComp {
 
     public boolean isDirExist(String fileName, String filePath, String userId) {
         LambdaQueryWrapper<UserFile> lambdaQueryWrapper = new LambdaQueryWrapper<>();
-        lambdaQueryWrapper.eq(UserFile::getFileName, fileName)
+        lambdaQueryWrapper
+                .eq(UserFile::getFileName, fileName)
                 .eq(UserFile::getFilePath, QiwenFile.formatPath(filePath))
                 .eq(UserFile::getUserId, userId)
                 .eq(UserFile::getDeleteFlag, 0)
@@ -445,7 +471,6 @@ public class FileDealComp {
         }
         return false;
     }
-
 
     public void parseMusicFile(String extendName, int storageType, String fileUrl, String fileId) {
         File outFile = null;
@@ -481,7 +506,9 @@ public class FileDealComp {
                         if (frame != null && !frame.isEmpty()) {
                             body = (FrameBodyAPIC) frame.getBody();
                             byte[] imageData = body.getImageData();
-                            music.setAlbumImage(Base64.getEncoder().encodeToString(imageData));
+                            music.setAlbumImage(Base64
+                                    .getEncoder()
+                                    .encodeToString(imageData));
                         }
                         if (tag != null) {
                             music.setArtist(tag.getFirst(FieldKey.ARTIST));
@@ -490,7 +517,8 @@ public class FileDealComp {
                             music.setYear(tag.getFirst(FieldKey.YEAR));
                             try {
                                 music.setTrack(tag.getFirst(FieldKey.TRACK));
-                            } catch (Exception e) {
+                            }
+                            catch (Exception e) {
                                 // ignore
                             }
 
@@ -502,7 +530,8 @@ public class FileDealComp {
                             music.setEncoder(tag.getFirst(FieldKey.ENCODER));
                         }
                     }
-                } else if ("flac".equalsIgnoreCase(extendName)) {
+                }
+                else if ("flac".equalsIgnoreCase(extendName)) {
                     AudioFile f = new FlacFileReader().read(outFile);
                     tag = f.getTag();
                     audioHeader = f.getAudioHeader();
@@ -522,7 +551,9 @@ public class FileDealComp {
                         if (artworkList != null && !artworkList.isEmpty()) {
                             Artwork artwork = artworkList.get(0);
                             byte[] binaryData = artwork.getBinaryData();
-                            music.setAlbumImage(Base64.getEncoder().encodeToString(binaryData));
+                            music.setAlbumImage(Base64
+                                    .getEncoder()
+                                    .encodeToString(binaryData));
                         }
                     }
 
@@ -537,15 +568,18 @@ public class FileDealComp {
 
                         String lyc = MusicUtils.getLyc(music.getArtist(), music.getTitle(), music.getAlbum());
                         music.setLyrics(lyc);
-                    } catch (Exception e) {
+                    }
+                    catch (Exception e) {
                         log.info(e.getMessage());
                     }
                 }
                 musicMapper.insert(music);
             }
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             log.error("解析音乐信息失败！", e);
-        } finally {
+        }
+        finally {
             IOUtils.closeQuietly(inputStream);
             IOUtils.closeQuietly(fileOutputStream);
             if (outFile != null) {

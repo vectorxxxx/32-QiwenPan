@@ -1,42 +1,44 @@
 package com.qiwenshare.file.io;
 
-import com.qiwenshare.common.exception.QiwenException;
 import com.qiwenshare.ufop.util.UFOPUtils;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang3.StringUtils;
 
 /**
- * @author MAC
+ * @author VectorX
  * @version 1.0
  * @description: TODO
  * @date 2022/4/21 12:08
  */
-public class QiwenFile {
+public class QiwenFile
+{
 
     private final String path;
     public static final String separator = "/";
     private boolean isDirectory;
 
     public QiwenFile(String pathname, boolean isDirectory) {
-//        if (StringUtils.isEmpty(pathname)) {
-//            throw new QiwenException("file name format error，pathname:" + pathname);
-//        }
+        //        if (StringUtils.isEmpty(pathname)) {
+        //            throw new QiwenException("file name format error，pathname:" + pathname);
+        //        }
         this.path = formatPath(pathname);
         this.isDirectory = isDirectory;
     }
 
     public QiwenFile(String parent, String child, boolean isDirectory) {
-//        if (StringUtils.isEmpty(child)) {
-//            throw new QiwenException("file name format error，parent:" + parent +", child:" + child);
-//        }
+        //        if (StringUtils.isEmpty(child)) {
+        //            throw new QiwenException("file name format error，parent:" + parent +", child:" + child);
+        //        }
         if (parent != null) {
-            String parentPath = separator.equals(formatPath(parent)) ? "" : formatPath(parent);
+            String parentPath = separator.equals(formatPath(parent)) ?
+                                "" :
+                                formatPath(parent);
             String childPath = formatPath(child);
             if (childPath.startsWith(separator)) {
                 childPath = childPath.replaceFirst(separator, "");
             }
             this.path = parentPath + separator + childPath;
-        } else {
+        }
+        else {
             this.path = formatPath(child);
         }
         this.isDirectory = isDirectory;
@@ -98,12 +100,11 @@ public class QiwenFile {
     }
 
     public boolean isDirectory() {
-       return isDirectory;
+        return isDirectory;
     }
 
     public boolean isFile() {
         return !isDirectory;
     }
 
-    
 }

@@ -12,14 +12,15 @@ import javax.annotation.Resource;
 import java.util.List;
 
 /**
- * @author MAC
+ * @author VectorX
  * @version 1.0
  * @description: TODO
  * @date 2021/12/30 14:54
  */
 @Slf4j
 @Service
-public class SysParamService extends ServiceImpl<SysParamMapper, SysParam> implements ISysParamService {
+public class SysParamService extends ServiceImpl<SysParamMapper, SysParam> implements ISysParamService
+{
 
     @Resource
     SysParamMapper sysParamMapper;
@@ -30,7 +31,9 @@ public class SysParamService extends ServiceImpl<SysParamMapper, SysParam> imple
         sysParam.setSysParamKey(key);
         List<SysParam> list = sysParamMapper.selectList(new QueryWrapper<>(sysParam));
         if (list != null && !list.isEmpty()) {
-            return list.get(0).getSysParamValue();
+            return list
+                    .get(0)
+                    .getSysParamValue();
         }
         return null;
     }

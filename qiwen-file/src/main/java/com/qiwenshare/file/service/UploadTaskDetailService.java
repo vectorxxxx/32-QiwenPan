@@ -10,7 +10,8 @@ import javax.annotation.Resource;
 import java.util.List;
 
 @Service
-public class UploadTaskDetailService extends ServiceImpl<UploadTaskDetailMapper, UploadTaskDetail> implements IUploadTaskDetailService {
+public class UploadTaskDetailService extends ServiceImpl<UploadTaskDetailMapper, UploadTaskDetail> implements IUploadTaskDetailService
+{
 
     @Resource
     UploadTaskDetailMapper uploadTaskDetailMapper;

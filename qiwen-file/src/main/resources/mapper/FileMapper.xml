@@ -11,11 +11,11 @@
         filePath, extendName, uploadTime, fileSize, isDir)
         VALUES
         <foreach collection="list" item="file" index="index" separator=",">
-        (#{file.userId}, #{file.fileName},#{file.timeStampName},
-         #{file.fileUrl}, #{file.filePath}, #{file.extendName}, #{file.uploadTime},
-         #{file.fileSize}, #{file.isDir})
+            (#{file.userId}, #{file.fileName},#{file.timeStampName},
+            #{file.fileUrl}, #{file.filePath}, #{file.extendName}, #{file.uploadTime},
+            #{file.fileSize}, #{file.isDir})
         </foreach>
     </insert>
-    
+
 
 </mapper>

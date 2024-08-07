@@ -5,31 +5,36 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
-import javax.persistence.*;
-import java.util.UUID;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
 
 @Data
 @Table(name = "share")
 @Entity
 @TableName("share")
-public class Share {
+public class Share
+{
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     @TableId(type = IdType.AUTO)
     private String shareId;
-    @Column(columnDefinition="varchar(20) comment '用户id'")
+    @Column(columnDefinition = "varchar(20) comment '用户id'")
     private String userId;
-    @Column(columnDefinition="varchar(30) comment '分享时间'")
+    @Column(columnDefinition = "varchar(30) comment '分享时间'")
     private String shareTime;
-    @Column(columnDefinition="varchar(30) comment '失效时间'")
+    @Column(columnDefinition = "varchar(30) comment '失效时间'")
     private String endTime;
-    @Column(columnDefinition="varchar(10) comment '提取码'")
+    @Column(columnDefinition = "varchar(10) comment '提取码'")
     private String extractionCode;
-    @Column(columnDefinition="varchar(40) comment '分享批次号'")
+    @Column(columnDefinition = "varchar(40) comment '分享批次号'")
     private String shareBatchNum;
-    @Column(columnDefinition="int(2) comment '分享类型(0公共,1私密,2好友)'")
+    @Column(columnDefinition = "int(2) comment '分享类型(0公共,1私密,2好友)'")
     private Integer shareType;
-    @Column(columnDefinition="int(2) comment '分享状态(0正常,1已失效,2已撤销)'")
+    @Column(columnDefinition = "int(2) comment '分享状态(0正常,1已失效,2已撤销)'")
     private Integer shareStatus;
 
 }

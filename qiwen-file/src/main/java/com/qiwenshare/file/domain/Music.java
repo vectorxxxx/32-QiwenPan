@@ -5,10 +5,15 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
 
 /**
- * @author MAC
+ * @author VectorX
  * @version 1.0
  * @description: TODO
  * @date 2022/4/27 23:44
@@ -17,11 +22,12 @@ import javax.persistence.*;
 @Table(name = "music")
 @Entity
 @TableName("music")
-public class Music {
+public class Music
+{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @TableId(type = IdType.AUTO)
-    @Column(columnDefinition="bigint(20)")
+    @Column(columnDefinition = "bigint(20)")
     private String musicId;
     @Column(columnDefinition = "bigint(20) comment '文件id'")
     private String fileId;
@@ -38,7 +44,7 @@ public class Music {
     private String genre;
     @Column
     private String comment;
-    @Column(columnDefinition="varchar(10000) comment '歌词'")
+    @Column(columnDefinition = "varchar(10000) comment '歌词'")
     private String lyrics;
     @Column
     private String composer;

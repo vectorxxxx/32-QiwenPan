@@ -3,7 +3,8 @@ package com.qiwenshare.file.vo.commonfile;
 import lombok.Data;
 
 @Data
-public class CommonFileListVo {
+public class CommonFileListVo
+{
 
     public Long commonFileId;
 
@@ -12,6 +13,5 @@ public class CommonFileListVo {
     private String userFileId;
 
     private Long userId;
-
 
 }

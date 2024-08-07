@@ -5,18 +5,24 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
 
 /**
  * 用户基础信息类
  *
- * @author ma116
+ * @author VectorX
  */
 @Data
 @Table(name = "user")
 @Entity
 @TableName("user")
-public class UserBean {
+public class UserBean
+{
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -80,6 +86,5 @@ public class UserBean {
     private Long modifyUserId;
     @Column(columnDefinition = "varchar(28) comment 'open id'")
     private String wxOpenId;
-
 
 }

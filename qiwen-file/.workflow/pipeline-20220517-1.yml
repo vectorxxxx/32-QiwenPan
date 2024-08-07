@@ -26,10 +26,10 @@ stages:
           - name: BUILD_ARTIFACT
             path:
               - ./release
-        settings: []
+        settings: [ ]
         caches:
           - ~/.m2
-        strategy: {}
+        strategy: { }
   - name: stage-4d60b905
     displayName: 部署
     strategy: naturally
@@ -63,4 +63,4 @@ stages:
           - chmod -R 777 ./*
           - sh restart.sh
           - ' echo ''Hello Gitee!'''
-        strategy: {}
+        strategy: { }

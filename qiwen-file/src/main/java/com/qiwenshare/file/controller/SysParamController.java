@@ -1,7 +1,6 @@
 package com.qiwenshare.file.controller;
 
-
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.qiwenshare.common.result.RestResult;
 import com.qiwenshare.file.api.ISysParamService;
 import com.qiwenshare.file.domain.SysParam;
@@ -15,33 +14,36 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Tag(name = "系统参数管理")
 @RestController
 @RequestMapping("/param")
-public class SysParamController {
+public class SysParamController
+{
     @Resource
-    ISysParamService sysParamService;
+    private ISysParamService sysParamService;
 
-    @Operation(summary = "查询系统参数组", tags = {"系统参数管理"})
-    @RequestMapping(value = "/grouplist", method = RequestMethod.GET)
+    @Operation(summary = "查询系统参数组",
+               tags = {"系统参数管理"})
+    @RequestMapping(value = "/grouplist",
+                    method = RequestMethod.GET)
     @ResponseBody
-    public RestResult<Map> groupList(
-            @Parameter(description = "查询参数dto", required = false)
-                    QueryGroupParamDTO queryGroupParamDTO
-    ) {
-        List<SysParam> list = sysParamService.list(new QueryWrapper<SysParam>().lambda().eq(SysParam::getGroupName, queryGroupParamDTO.getGroupName()));
-        Map<String, Object> result = new HashMap<>();
+    public RestResult<Map<String, Object>> groupList(
+            @Parameter(description = "查询参数dto",
+                       required = false)
+                    QueryGroupParamDTO queryGroupParamDTO) {
+        // 查询系统参数，封装成键值对形式
+        Map<String, Object> result = sysParamService
+                .list(new LambdaQueryWrapper<SysParam>().eq(SysParam::getGroupName, queryGroupParamDTO.getGroupName()))
+                .stream()
+                .collect(Collectors.toMap(SysParam::getSysParamKey, SysParam::getSysParamValue));
 
-        for (SysParam sysParam : list) {
-            result.put(sysParam.getSysParamKey(), sysParam.getSysParamValue());
-        }
-
-        return RestResult.success().data(result);
+        // 返回结果
+        return RestResult
+                .<Map<String, Object>>success()
+                .data(result);
     }
-
 
 }

@@ -74,22 +74,24 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.regex.Pattern;
 
-@Tag(name = "file", description = "该接口为文件接口，主要用来做一些文件的基本操作，如创建目录，删除，移动，复制等。")
+@Tag(name = "file",
+     description = "该接口为文件接口，主要用来做一些文件的基本操作，如创建目录，删除，移动，复制等。")
 @RestController
 @Slf4j
 @RequestMapping("/file")
-public class FileController {
+public class FileController
+{
 
     @Resource
-    IFileService fileService;
+    private IFileService fileService;
     @Resource
-    IUserFileService userFileService;
+    private IUserFileService userFileService;
     @Resource
-    UFOPFactory ufopFactory;
+    private UFOPFactory ufopFactory;
     @Resource
-    FileDealComp fileDealComp;
+    private FileDealComp fileDealComp;
     @Resource
-    AsyncTaskComp asyncTaskComp;
+    private AsyncTaskComp asyncTaskComp;
     @Autowired
     private ElasticsearchClient elasticsearchClient;
     @Value("${ufop.storage-type}")
@@ -99,10 +101,15 @@ public class FileController {
 
     public static final String CURRENT_MODULE = "文件接口";
 
-    @Operation(summary = "创建文件", description = "创建文件", tags = {"file"})
+    @Operation(summary = "创建文件",
+               description = "创建文件",
+               tags = {"file"})
     @ResponseBody
-    @RequestMapping(value = "/createFile", method = RequestMethod.POST)
-    public RestResult<Object> createFile(@Valid @RequestBody CreateFileDTO createFileDTO) {
+    @RequestMapping(value = "/createFile",
+                    method = RequestMethod.POST)
+    public RestResult<Object> createFile(@Valid
+                                         @RequestBody
+                                                 CreateFileDTO createFileDTO) {
 
         try {
 
@@ -112,23 +119,35 @@ public class FileController {
             String extendName = createFileDTO.getExtendName();
             List<UserFile> userFiles = userFileService.selectSameUserFile(fileName, filePath, extendName, userId);
             if (userFiles != null && !userFiles.isEmpty()) {
-                return RestResult.fail().message("同名文件已存在");
+                return RestResult
+                        .fail()
+                        .message("同名文件已存在");
             }
-            String uuid = UUID.randomUUID().toString().replaceAll("-", "");
+            String uuid = UUID
+                    .randomUUID()
+                    .toString()
+                    .replaceAll("-", "");
 
             String templateFilePath = "";
             if ("docx".equals(extendName)) {
                 templateFilePath = "template/Word.docx";
-            } else if ("xlsx".equals(extendName)) {
+            }
+            else if ("xlsx".equals(extendName)) {
                 templateFilePath = "template/Excel.xlsx";
-            } else if ("pptx".equals(extendName)) {
+            }
+            else if ("pptx".equals(extendName)) {
                 templateFilePath = "template/PowerPoint.pptx";
-            } else if ("txt".equals(extendName)) {
+            }
+            else if ("txt".equals(extendName)) {
                 templateFilePath = "template/Text.txt";
-            } else if ("drawio".equals(extendName)) {
+            }
+            else if ("drawio".equals(extendName)) {
                 templateFilePath = "template/Drawio.drawio";
             }
-            String url2 = ClassUtils.getDefaultClassLoader().getResource("static/" + templateFilePath).getPath();
+            String url2 = ClassUtils
+                    .getDefaultClassLoader()
+                    .getResource("static/" + templateFilePath)
+                    .getPath();
             url2 = URLDecoder.decode(url2, "UTF-8");
             FileInputStream fileInputStream = new FileInputStream(url2);
             Copier copier = ufopFactory.getCopier();
@@ -143,7 +162,9 @@ public class FileController {
             fileBean.setStorageType(storageType);
             fileBean.setIdentifier(uuid);
             fileBean.setCreateTime(DateUtil.getCurrentTime());
-            fileBean.setCreateUserId(SessionUtil.getSession().getUserId());
+            fileBean.setCreateUserId(SessionUtil
+                    .getSession()
+                    .getUserId());
             fileBean.setFileStatus(1);
             boolean saveFlag = fileService.save(fileBean);
             UserFile userFile = new UserFile();
@@ -161,27 +182,41 @@ public class FileController {
                 userFile.setCreateUserId(SessionUtil.getUserId());
                 userFileService.save(userFile);
             }
-            return RestResult.success().message("文件创建成功");
-        } catch (Exception e) {
+            return RestResult
+                    .success()
+                    .message("文件创建成功");
+        }
+        catch (Exception e) {
             log.error(e.getMessage());
-            return RestResult.fail().message(e.getMessage());
+            return RestResult
+                    .fail()
+                    .message(e.getMessage());
         }
     }
 
-    @Operation(summary = "创建文件夹", description = "目录(文件夹)的创建", tags = {"file"})
-    @RequestMapping(value = "/createFold", method = RequestMethod.POST)
-    @MyLog(operation = "创建文件夹", module = CURRENT_MODULE)
+    @Operation(summary = "创建文件夹",
+               description = "目录(文件夹)的创建",
+               tags = {"file"})
+    @RequestMapping(value = "/createFold",
+                    method = RequestMethod.POST)
+    @MyLog(operation = "创建文件夹",
+           module = CURRENT_MODULE)
     @ResponseBody
-    public RestResult<String> createFold(@Valid @RequestBody CreateFoldDTO createFoldDto) {
+    public RestResult<String> createFold(@Valid
+                                         @RequestBody
+                                                 CreateFoldDTO createFoldDto) {
 
-        String userId = SessionUtil.getSession().getUserId();
+        String userId = SessionUtil
+                .getSession()
+                .getUserId();
         String filePath = createFoldDto.getFilePath();
-
 
         boolean isDirExist = fileDealComp.isDirExist(createFoldDto.getFileName(), createFoldDto.getFilePath(), userId);
 
         if (isDirExist) {
-            return RestResult.fail().message("同名文件夹已存在");
+            return RestResult
+                    .<String>fail()
+                    .message("同名文件夹已存在");
         }
 
         UserFile userFile = QiwenFileUtil.getQiwenDir(userId, filePath, createFoldDto.getFileName());
@@ -191,15 +226,20 @@ public class FileController {
         return RestResult.success();
     }
 
-    @Operation(summary = "文件搜索", description = "文件搜索", tags = {"file"})
+    @Operation(summary = "文件搜索",
+               description = "文件搜索",
+               tags = {"file"})
     @GetMapping(value = "/search")
-    @MyLog(operation = "文件搜索", module = CURRENT_MODULE)
+    @MyLog(operation = "文件搜索",
+           module = CURRENT_MODULE)
     @ResponseBody
     public RestResult<SearchFileVO> searchFile(SearchFileDTO searchFileDTO) {
-        JwtUser sessionUserBean =  SessionUtil.getSession();
+        JwtUser sessionUserBean = SessionUtil.getSession();
 
-        int currentPage = (int)searchFileDTO.getCurrentPage() - 1;
-        int pageCount = (int)(searchFileDTO.getPageCount() == 0 ? 10 : searchFileDTO.getPageCount());
+        int currentPage = (int) searchFileDTO.getCurrentPage() - 1;
+        int pageCount = (int) (searchFileDTO.getPageCount() == 0 ?
+                               10 :
+                               searchFileDTO.getPageCount());
 
         SearchResponse<FileSearch> search = null;
         try {
@@ -236,43 +276,57 @@ public class FileController {
         }
 
         List<SearchFileVO> searchFileVOList = new ArrayList<>();
-        for (Hit<FileSearch> hit : search.hits().hits()) {
+        for (Hit<FileSearch> hit : search
+                .hits()
+                .hits()) {
             SearchFileVO searchFileVO = new SearchFileVO();
             BeanUtil.copyProperties(hit.source(), searchFileVO);
             searchFileVO.setHighLight(hit.highlight());
             searchFileVOList.add(searchFileVO);
             asyncTaskComp.checkESUserFileId(searchFileVO.getUserFileId());
         }
-        return RestResult.success().dataList(searchFileVOList, searchFileVOList.size());
+        return RestResult
+                .<SearchFileVO>success()
+                .dataList(searchFileVOList, searchFileVOList.size());
     }
 
-
-    @Operation(summary = "文件重命名", description = "文件重命名", tags = {"file"})
-    @RequestMapping(value = "/renamefile", method = RequestMethod.POST)
-    @MyLog(operation = "文件重命名", module = CURRENT_MODULE)
+    @Operation(summary = "文件重命名",
+               description = "文件重命名",
+               tags = {"file"})
+    @RequestMapping(value = "/renamefile",
+                    method = RequestMethod.POST)
+    @MyLog(operation = "文件重命名",
+           module = CURRENT_MODULE)
     @ResponseBody
-    public RestResult<String> renameFile(@RequestBody RenameFileDTO renameFileDto) {
+    public RestResult<String> renameFile(
+            @RequestBody
+                    RenameFileDTO renameFileDto) {
 
-        JwtUser sessionUserBean =  SessionUtil.getSession();
+        JwtUser sessionUserBean = SessionUtil.getSession();
         UserFile userFile = userFileService.getById(renameFileDto.getUserFileId());
 
         List<UserFile> userFiles = userFileService.selectUserFileByNameAndPath(renameFileDto.getFileName(), userFile.getFilePath(), sessionUserBean.getUserId());
         if (userFiles != null && !userFiles.isEmpty()) {
-            return RestResult.fail().message("同名文件已存在");
+            return RestResult
+                    .<String>fail()
+                    .message("同名文件已存在");
         }
 
         LambdaUpdateWrapper<UserFile> lambdaUpdateWrapper = new LambdaUpdateWrapper<>();
-        lambdaUpdateWrapper.set(UserFile::getFileName, renameFileDto.getFileName())
+        lambdaUpdateWrapper
+                .set(UserFile::getFileName, renameFileDto.getFileName())
                 .set(UserFile::getUploadTime, DateUtil.getCurrentTime())
                 .eq(UserFile::getUserFileId, renameFileDto.getUserFileId());
         userFileService.update(lambdaUpdateWrapper);
         if (1 == userFile.getIsDir()) {
-            List<UserFile> list = userFileService.selectUserFileByLikeRightFilePath(new QiwenFile(userFile.getFilePath(), userFile.getFileName(), true).getPath(), sessionUserBean.getUserId());
+            List<UserFile> list = userFileService.selectUserFileByLikeRightFilePath(new QiwenFile(userFile.getFilePath(), userFile.getFileName(), true).getPath(),
+                    sessionUserBean.getUserId());
 
             for (UserFile newUserFile : list) {
                 String escapedPattern = Pattern.quote(new QiwenFile(userFile.getFilePath(), userFile.getFileName(), userFile.getIsDir() == 1).getPath());
-                newUserFile.setFilePath(newUserFile.getFilePath().replaceFirst(escapedPattern,
-                        new QiwenFile(userFile.getFilePath(), renameFileDto.getFileName(), userFile.getIsDir() == 1).getPath()));
+                newUserFile.setFilePath(newUserFile
+                        .getFilePath()
+                        .replaceFirst(escapedPattern, new QiwenFile(userFile.getFilePath(), renameFileDto.getFileName(), userFile.getIsDir() == 1).getPath()));
                 userFileService.updateById(newUserFile);
             }
         }
@@ -280,50 +334,84 @@ public class FileController {
         return RestResult.success();
     }
 
-    @Operation(summary = "获取文件列表", description = "用来做前台列表展示", tags = {"file"})
-    @RequestMapping(value = "/getfilelist", method = RequestMethod.GET)
+    @Operation(summary = "获取文件列表",
+               description = "用来做前台列表展示",
+               tags = {"file"})
+    @RequestMapping(value = "/getfilelist",
+                    method = RequestMethod.GET)
     @ResponseBody
     public RestResult<FileListVO> getFileList(
-            @Parameter(description = "文件类型", required = true) String fileType,
-            @Parameter(description = "文件路径", required = true) String filePath,
-            @Parameter(description = "当前页", required = true) long currentPage,
-            @Parameter(description = "页面数量", required = true) long pageCount){
+            @Parameter(description = "文件类型",
+                       required = true)
+                    String fileType,
+            @Parameter(description = "文件路径",
+                       required = true)
+                    String filePath,
+            @Parameter(description = "当前页",
+                       required = true)
+                    long currentPage,
+            @Parameter(description = "页面数量",
+                       required = true)
+                    long pageCount) {
         if ("0".equals(fileType)) {
             IPage<FileListVO> fileList = userFileService.userFileList(null, filePath, currentPage, pageCount);
-            return RestResult.success().dataList(fileList.getRecords(), fileList.getTotal());
-        } else {
-            IPage<FileListVO> fileList = userFileService.getFileByFileType(Integer.valueOf(fileType), currentPage, pageCount, SessionUtil.getSession().getUserId());
-            return RestResult.success().dataList(fileList.getRecords(), fileList.getTotal());
+            return RestResult
+                    .<FileListVO>success()
+                    .dataList(fileList.getRecords(), fileList.getTotal());
+        }
+        else {
+            IPage<FileListVO> fileList = userFileService.getFileByFileType(Integer.valueOf(fileType), currentPage, pageCount, SessionUtil
+                    .getSession()
+                    .getUserId());
+            return RestResult
+                    .<FileListVO>success()
+                    .dataList(fileList.getRecords(), fileList.getTotal());
         }
     }
 
-
-    @Operation(summary = "批量删除文件", description = "批量删除文件", tags = {"file"})
-    @RequestMapping(value = "/batchdeletefile", method = RequestMethod.POST)
-    @MyLog(operation = "批量删除文件", module = CURRENT_MODULE)
+    @Operation(summary = "批量删除文件",
+               description = "批量删除文件",
+               tags = {"file"})
+    @RequestMapping(value = "/batchdeletefile",
+                    method = RequestMethod.POST)
+    @MyLog(operation = "批量删除文件",
+           module = CURRENT_MODULE)
     @ResponseBody
-    public RestResult<String> deleteImageByIds(@RequestBody BatchDeleteFileDTO batchDeleteFileDto) {
+    public RestResult<String> deleteImageByIds(
+            @RequestBody
+                    BatchDeleteFileDTO batchDeleteFileDto) {
         String userFileIds = batchDeleteFileDto.getUserFileIds();
         String[] userFileIdList = userFileIds.split(",");
-        userFileService.update(new UpdateWrapper<UserFile>().lambda().set(UserFile::getDeleteFlag, 1).in(UserFile::getUserFileId, Arrays.asList(userFileIdList)));
+        userFileService.update(new UpdateWrapper<UserFile>()
+                .lambda()
+                .set(UserFile::getDeleteFlag, 1)
+                .in(UserFile::getUserFileId, Arrays.asList(userFileIdList)));
         for (String userFileId : userFileIdList) {
-            executor.execute(()->{
-                    userFileService.deleteUserFile(userFileId, SessionUtil.getUserId());
+            executor.execute(() -> {
+                userFileService.deleteUserFile(userFileId, SessionUtil.getUserId());
             });
 
             fileDealComp.deleteESByUserFileId(userFileId);
         }
 
-        return RestResult.success().message("批量删除文件成功");
+        return RestResult
+                .<String>success()
+                .message("批量删除文件成功");
     }
 
-    @Operation(summary = "删除文件", description = "可以删除文件或者目录", tags = {"file"})
-    @RequestMapping(value = "/deletefile", method = RequestMethod.POST)
-    @MyLog(operation = "删除文件", module = CURRENT_MODULE)
+    @Operation(summary = "删除文件",
+               description = "可以删除文件或者目录",
+               tags = {"file"})
+    @RequestMapping(value = "/deletefile",
+                    method = RequestMethod.POST)
+    @MyLog(operation = "删除文件",
+           module = CURRENT_MODULE)
     @ResponseBody
-    public RestResult deleteFile(@RequestBody DeleteFileDTO deleteFileDto) {
+    public RestResult deleteFile(
+            @RequestBody
+                    DeleteFileDTO deleteFileDto) {
 
-        JwtUser sessionUserBean =  SessionUtil.getSession();
+        JwtUser sessionUserBean = SessionUtil.getSession();
         userFileService.deleteUserFile(deleteFileDto.getUserFileId(), sessionUserBean.getUserId());
         fileDealComp.deleteESByUserFileId(deleteFileDto.getUserFileId());
 
@@ -331,27 +419,42 @@ public class FileController {
 
     }
 
-    @Operation(summary = "解压文件", description = "解压文件。", tags = {"file"})
-    @RequestMapping(value = "/unzipfile", method = RequestMethod.POST)
-    @MyLog(operation = "解压文件", module = CURRENT_MODULE)
+    @Operation(summary = "解压文件",
+               description = "解压文件。",
+               tags = {"file"})
+    @RequestMapping(value = "/unzipfile",
+                    method = RequestMethod.POST)
+    @MyLog(operation = "解压文件",
+           module = CURRENT_MODULE)
     @ResponseBody
-    public RestResult<String> unzipFile(@RequestBody UnzipFileDTO unzipFileDto) {
+    public RestResult<String> unzipFile(
+            @RequestBody
+                    UnzipFileDTO unzipFileDto) {
 
         try {
             fileService.unzipFile(unzipFileDto.getUserFileId(), unzipFileDto.getUnzipMode(), unzipFileDto.getFilePath());
-        } catch (QiwenException e) {
-            return RestResult.fail().message(e.getMessage());
+        }
+        catch (QiwenException e) {
+            return RestResult
+                    .<String>fail()
+                    .message(e.getMessage());
         }
 
         return RestResult.success();
 
     }
 
-    @Operation(summary = "文件复制", description = "可以复制文件或者目录", tags = {"file"})
-    @RequestMapping(value = "/copyfile", method = RequestMethod.POST)
-    @MyLog(operation = "文件复制", module = CURRENT_MODULE)
+    @Operation(summary = "文件复制",
+               description = "可以复制文件或者目录",
+               tags = {"file"})
+    @RequestMapping(value = "/copyfile",
+                    method = RequestMethod.POST)
+    @MyLog(operation = "文件复制",
+           module = CURRENT_MODULE)
     @ResponseBody
-    public RestResult<String> copyFile(@RequestBody CopyFileDTO copyFileDTO) {
+    public RestResult<String> copyFile(
+            @RequestBody
+                    CopyFileDTO copyFileDTO) {
         String userId = SessionUtil.getUserId();
         String filePath = copyFileDTO.getFilePath();
         String userFileIds = copyFileDTO.getUserFileIds();
@@ -363,7 +466,9 @@ public class FileController {
             if (userFile.isDirectory()) {
                 QiwenFile qiwenFile = new QiwenFile(oldfilePath, fileName, true);
                 if (filePath.startsWith(qiwenFile.getPath() + QiwenFile.separator) || filePath.equals(qiwenFile.getPath())) {
-                    return RestResult.fail().message("原路径与目标路径冲突，不能复制");
+                    return RestResult
+                            .<String>fail()
+                            .message("原路径与目标路径冲突，不能复制");
                 }
             }
 
@@ -375,13 +480,19 @@ public class FileController {
 
     }
 
-    @Operation(summary = "文件移动", description = "可以移动文件或者目录", tags = {"file"})
-    @RequestMapping(value = "/movefile", method = RequestMethod.POST)
-    @MyLog(operation = "文件移动", module = CURRENT_MODULE)
+    @Operation(summary = "文件移动",
+               description = "可以移动文件或者目录",
+               tags = {"file"})
+    @RequestMapping(value = "/movefile",
+                    method = RequestMethod.POST)
+    @MyLog(operation = "文件移动",
+           module = CURRENT_MODULE)
     @ResponseBody
-    public RestResult<String> moveFile(@RequestBody MoveFileDTO moveFileDto) {
+    public RestResult<String> moveFile(
+            @RequestBody
+                    MoveFileDTO moveFileDto) {
 
-        JwtUser sessionUserBean =  SessionUtil.getSession();
+        JwtUser sessionUserBean = SessionUtil.getSession();
         UserFile userFile = userFileService.getById(moveFileDto.getUserFileId());
         String oldfilePath = userFile.getFilePath();
         String newfilePath = moveFileDto.getFilePath();
@@ -390,7 +501,9 @@ public class FileController {
         if (StringUtil.isEmpty(extendName)) {
             QiwenFile qiwenFile = new QiwenFile(oldfilePath, fileName, true);
             if (newfilePath.startsWith(qiwenFile.getPath() + QiwenFile.separator) || newfilePath.equals(qiwenFile.getPath())) {
-                return RestResult.fail().message("原路径与目标路径冲突，不能移动");
+                return RestResult
+                        .<String>fail()
+                        .message("原路径与目标路径冲突，不能移动");
             }
         }
 
@@ -401,14 +514,19 @@ public class FileController {
 
     }
 
-    @Operation(summary = "批量移动文件", description = "可以同时选择移动多个文件或者目录", tags = {"file"})
-    @RequestMapping(value = "/batchmovefile", method = RequestMethod.POST)
-    @MyLog(operation = "批量移动文件", module = CURRENT_MODULE)
+    @Operation(summary = "批量移动文件",
+               description = "可以同时选择移动多个文件或者目录",
+               tags = {"file"})
+    @RequestMapping(value = "/batchmovefile",
+                    method = RequestMethod.POST)
+    @MyLog(operation = "批量移动文件",
+           module = CURRENT_MODULE)
     @ResponseBody
-    public RestResult<String> batchMoveFile(@RequestBody BatchMoveFileDTO batchMoveFileDto) {
+    public RestResult<String> batchMoveFile(
+            @RequestBody
+                    BatchMoveFileDTO batchMoveFileDto) {
 
-        JwtUser sessionUserBean =  SessionUtil.getSession();
-
+        JwtUser sessionUserBean = SessionUtil.getSession();
 
         String newfilePath = batchMoveFileDto.getFilePath();
 
@@ -420,30 +538,37 @@ public class FileController {
             if (StringUtil.isEmpty(userFile.getExtendName())) {
                 QiwenFile qiwenFile = new QiwenFile(userFile.getFilePath(), userFile.getFileName(), true);
                 if (newfilePath.startsWith(qiwenFile.getPath() + QiwenFile.separator) || newfilePath.equals(qiwenFile.getPath())) {
-                    return RestResult.fail().message("原路径与目标路径冲突，不能移动");
+                    return RestResult
+                            .<String>fail()
+                            .message("原路径与目标路径冲突，不能移动");
                 }
             }
             userFileService.updateFilepathByUserFileId(userFile.getUserFileId(), newfilePath, sessionUserBean.getUserId());
         }
 
-        return RestResult.success().data("批量移动文件成功");
+        return RestResult
+                .<String>success()
+                .data("批量移动文件成功");
 
     }
 
-    @Operation(summary = "获取文件树", description = "文件移动的时候需要用到该接口，用来展示目录树", tags = {"file"})
-    @RequestMapping(value = "/getfiletree", method = RequestMethod.GET)
+    @Operation(summary = "获取文件树",
+               description = "文件移动的时候需要用到该接口，用来展示目录树",
+               tags = {"file"})
+    @RequestMapping(value = "/getfiletree",
+                    method = RequestMethod.GET)
     @ResponseBody
     public RestResult<TreeNode> getFileTree() {
         RestResult<TreeNode> result = new RestResult<TreeNode>();
 
-        JwtUser sessionUserBean =  SessionUtil.getSession();
+        JwtUser sessionUserBean = SessionUtil.getSession();
 
         List<UserFile> userFileList = userFileService.selectFilePathTreeByUserId(sessionUserBean.getUserId());
         TreeNode resultTreeNode = new TreeNode();
         resultTreeNode.setLabel(QiwenFile.separator);
         resultTreeNode.setId(0L);
         long id = 1;
-        for (int i = 0; i < userFileList.size(); i++){
+        for (int i = 0; i < userFileList.size(); i++) {
             UserFile userFile = userFileList.get(i);
             QiwenFile qiwenFile = new QiwenFile(userFile.getFilePath(), userFile.getFileName(), false);
             String filePath = qiwenFile.getPath();
@@ -451,18 +576,17 @@ public class FileController {
             Queue<String> queue = new LinkedList<>();
 
             String[] strArr = filePath.split(QiwenFile.separator);
-            for (int j = 0; j < strArr.length; j++){
-                if (!"".equals(strArr[j]) && strArr[j] != null){
+            for (int j = 0; j < strArr.length; j++) {
+                if (!"".equals(strArr[j]) && strArr[j] != null) {
                     queue.add(strArr[j]);
                 }
 
             }
-            if (queue.size() == 0){
+            if (queue.size() == 0) {
                 continue;
             }
 
             resultTreeNode = fileDealComp.insertTreeNode(resultTreeNode, id++, QiwenFile.separator, queue);
-
 
         }
         List<TreeNode> treeNodeList = resultTreeNode.getChildren();
@@ -476,11 +600,16 @@ public class FileController {
 
     }
 
-    @Operation(summary = "修改文件", description = "支持普通文本类文件的修改", tags = {"file"})
-    @RequestMapping(value = "/update", method = RequestMethod.POST)
+    @Operation(summary = "修改文件",
+               description = "支持普通文本类文件的修改",
+               tags = {"file"})
+    @RequestMapping(value = "/update",
+                    method = RequestMethod.POST)
     @ResponseBody
-    public RestResult<String> updateFile(@RequestBody UpdateFileDTO updateFileDTO) {
-        JwtUser sessionUserBean =  SessionUtil.getSession();
+    public RestResult<String> updateFile(
+            @RequestBody
+                    UpdateFileDTO updateFileDTO) {
+        JwtUser sessionUserBean = SessionUtil.getSession();
         UserFile userFile = userFileService.getById(updateFileDTO.getUserFileId());
         FileBean fileBean = fileService.getById(userFile.getFileId());
         Long pointCount = fileService.getFilePointCount(userFile.getFileId());
@@ -498,29 +627,37 @@ public class FileController {
 
             fileService.updateFileDetail(userFile.getUserFileId(), md5Str, fileSize);
 
-
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             throw new QiwenException(999999, "修改文件异常");
-        } finally {
+        }
+        finally {
             try {
                 byteArrayInputStream.close();
-            } catch (IOException e) {
+            }
+            catch (IOException e) {
                 e.printStackTrace();
             }
         }
-        return RestResult.success().message("修改文件成功");
+        return RestResult
+                .<String>success()
+                .message("修改文件成功");
     }
 
-    @Operation(summary = "查询文件详情", description = "查询文件详情", tags = {"file"})
-    @RequestMapping(value = "/detail", method = RequestMethod.GET)
+    @Operation(summary = "查询文件详情",
+               description = "查询文件详情",
+               tags = {"file"})
+    @RequestMapping(value = "/detail",
+                    method = RequestMethod.GET)
     @ResponseBody
     public RestResult<FileDetailVO> queryFileDetail(
-            @Parameter(description = "用户文件Id", required = true) String userFileId){
+            @Parameter(description = "用户文件Id",
+                       required = true)
+                    String userFileId) {
         FileDetailVO vo = fileService.getFileDetail(userFileId);
-        return RestResult.success().data(vo);
+        return RestResult
+                .<FileDetailVO>success()
+                .data(vo);
     }
-
-
-
 
 }

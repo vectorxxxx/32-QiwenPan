@@ -7,17 +7,25 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.qiwenshare.common.util.DateUtil;
 import com.qiwenshare.common.util.MimeUtils;
-import com.qiwenshare.common.util.security.JwtUser;
 import com.qiwenshare.common.util.security.SessionUtil;
 import com.qiwenshare.file.api.IFiletransferService;
 import com.qiwenshare.file.component.FileDealComp;
-import com.qiwenshare.file.domain.*;
+import com.qiwenshare.file.domain.FileBean;
+import com.qiwenshare.file.domain.Image;
+import com.qiwenshare.file.domain.PictureFile;
+import com.qiwenshare.file.domain.UploadTask;
+import com.qiwenshare.file.domain.UploadTaskDetail;
+import com.qiwenshare.file.domain.UserFile;
 import com.qiwenshare.file.dto.file.DownloadFileDTO;
 import com.qiwenshare.file.dto.file.PreviewDTO;
 import com.qiwenshare.file.dto.file.UploadFileDTO;
 import com.qiwenshare.file.io.QiwenFile;
-import com.qiwenshare.file.mapper.*;
-import com.qiwenshare.file.util.QiwenFileUtil;
+import com.qiwenshare.file.mapper.FileMapper;
+import com.qiwenshare.file.mapper.ImageMapper;
+import com.qiwenshare.file.mapper.PictureFileMapper;
+import com.qiwenshare.file.mapper.UploadTaskDetailMapper;
+import com.qiwenshare.file.mapper.UploadTaskMapper;
+import com.qiwenshare.file.mapper.UserFileMapper;
 import com.qiwenshare.file.vo.file.UploadFileVo;
 import com.qiwenshare.ufop.constant.StorageTypeEnum;
 import com.qiwenshare.ufop.constant.UploadFileStatusEnum;
@@ -44,7 +52,14 @@ import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.awt.image.BufferedImage;
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
@@ -61,8 +76,9 @@ import java.util.zip.ZipOutputStream;
 
 @Slf4j
 @Service
-@Transactional(rollbackFor=Exception.class)
-public class FiletransferService implements IFiletransferService {
+@Transactional(rollbackFor = Exception.class)
+public class FiletransferService implements IFiletransferService
+{
 
     @Resource
     FileMapper fileMapper;
@@ -97,7 +113,8 @@ public class FiletransferService implements IFiletransferService {
         QiwenFile qiwenFile = null;
         if (relativePath.contains("/")) {
             qiwenFile = new QiwenFile(filePath, relativePath, false);
-        } else {
+        }
+        else {
             qiwenFile = new QiwenFile(filePath, uploadFileDTO.getFilename(), false);
         }
 
@@ -108,27 +125,30 @@ public class FiletransferService implements IFiletransferService {
             try {
                 userFileMapper.insert(userFile);
                 fileDealComp.uploadESByUserFileId(userFile.getUserFileId());
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
                 log.warn("极速上传文件冲突重命名处理: {}", JSON.toJSONString(userFile));
 
             }
 
             if (relativePath.contains("/")) {
                 QiwenFile finalQiwenFile = qiwenFile;
-                exec.execute(()->{
+                exec.execute(() -> {
                     fileDealComp.restoreParentFilePath(finalQiwenFile, SessionUtil.getUserId());
                 });
 
             }
 
             uploadFileVo.setSkipUpload(true);
-        } else {
+        }
+        else {
             uploadFileVo.setSkipUpload(false);
 
             List<Integer> uploaded = uploadTaskDetailMapper.selectUploadedChunkNumList(uploadFileDTO.getIdentifier());
             if (uploaded != null && !uploaded.isEmpty()) {
                 uploadFileVo.setUploaded(uploaded);
-            } else {
+            }
+            else {
 
                 LambdaQueryWrapper<UploadTask> lambdaQueryWrapper = new LambdaQueryWrapper<>();
                 lambdaQueryWrapper.eq(UploadTask::getIdentifier, uploadFileDTO.getIdentifier());
@@ -169,38 +189,44 @@ public class FiletransferService implements IFiletransferService {
         List<UploadFileResult> uploadFileResultList;
         try {
             uploadFileResultList = uploader.upload(request, uploadFile);
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             log.error("上传失败，请检查UFOP连接配置是否正确");
             throw new UploadException("上传失败", e);
         }
-        for (int i = 0; i < uploadFileResultList.size(); i++){
+        for (int i = 0; i < uploadFileResultList.size(); i++) {
             UploadFileResult uploadFileResult = uploadFileResultList.get(i);
             String relativePath = uploadFileDto.getRelativePath();
             QiwenFile qiwenFile = null;
             if (relativePath.contains("/")) {
                 qiwenFile = new QiwenFile(uploadFileDto.getFilePath(), relativePath, false);
-            } else {
+            }
+            else {
                 qiwenFile = new QiwenFile(uploadFileDto.getFilePath(), uploadFileDto.getFilename(), false);
             }
 
-            if (UploadFileStatusEnum.SUCCESS.equals(uploadFileResult.getStatus())){
+            if (UploadFileStatusEnum.SUCCESS.equals(uploadFileResult.getStatus())) {
                 FileBean fileBean = new FileBean(uploadFileResult);
                 fileBean.setCreateUserId(userId);
                 try {
                     fileMapper.insert(fileBean);
-                } catch (Exception e) {
+                }
+                catch (Exception e) {
                     log.warn("identifier Duplicate: {}", fileBean.getIdentifier());
-                    fileBean = fileMapper.selectOne(new QueryWrapper<FileBean>().lambda().eq(FileBean::getIdentifier, fileBean.getIdentifier()));
+                    fileBean = fileMapper.selectOne(new QueryWrapper<FileBean>()
+                            .lambda()
+                            .eq(FileBean::getIdentifier, fileBean.getIdentifier()));
                 }
 
                 UserFile userFile = new UserFile(qiwenFile, userId, fileBean.getFileId());
 
-
                 try {
                     userFileMapper.insert(userFile);
                     fileDealComp.uploadESByUserFileId(userFile.getUserFileId());
-                } catch (Exception e) {
-                    UserFile userFile1 = userFileMapper.selectOne(new QueryWrapper<UserFile>().lambda()
+                }
+                catch (Exception e) {
+                    UserFile userFile1 = userFileMapper.selectOne(new QueryWrapper<UserFile>()
+                            .lambda()
                             .eq(UserFile::getUserId, userFile.getUserId())
                             .eq(UserFile::getFilePath, userFile.getFilePath())
                             .eq(UserFile::getFileName, userFile.getFileName())
@@ -217,10 +243,9 @@ public class FiletransferService implements IFiletransferService {
                     }
                 }
 
-
                 if (relativePath.contains("/")) {
                     QiwenFile finalQiwenFile = qiwenFile;
-                    exec.execute(()->{
+                    exec.execute(() -> {
                         fileDealComp.restoreParentFilePath(finalQiwenFile, userId);
                     });
 
@@ -231,10 +256,10 @@ public class FiletransferService implements IFiletransferService {
                 uploadTaskDetailMapper.delete(lambdaQueryWrapper);
 
                 LambdaUpdateWrapper<UploadTask> lambdaUpdateWrapper = new LambdaUpdateWrapper<>();
-                lambdaUpdateWrapper.set(UploadTask::getUploadStatus, UploadFileStatusEnum.SUCCESS.getCode())
+                lambdaUpdateWrapper
+                        .set(UploadTask::getUploadStatus, UploadFileStatusEnum.SUCCESS.getCode())
                         .eq(UploadTask::getIdentifier, uploadFileDto.getIdentifier());
                 uploadTaskMapper.update(null, lambdaUpdateWrapper);
-
 
                 try {
                     if (UFOPUtils.isImageFile(uploadFileResult.getExtendName())) {
@@ -245,31 +270,37 @@ public class FiletransferService implements IFiletransferService {
                         image.setFileId(fileBean.getFileId());
                         imageMapper.insert(image);
                     }
-                } catch (Exception e) {
+                }
+                catch (Exception e) {
                     log.error("生成图片缩略图失败！", e);
                 }
 
-                fileDealComp.parseMusicFile(uploadFileResult.getExtendName(), uploadFileResult.getStorageType().getCode(), uploadFileResult.getFileUrl(), fileBean.getFileId());
+                fileDealComp.parseMusicFile(uploadFileResult.getExtendName(), uploadFileResult
+                        .getStorageType()
+                        .getCode(), uploadFileResult.getFileUrl(), fileBean.getFileId());
 
-            } else if (UploadFileStatusEnum.UNCOMPLATE.equals(uploadFileResult.getStatus())) {
+            }
+            else if (UploadFileStatusEnum.UNCOMPLATE.equals(uploadFileResult.getStatus())) {
                 UploadTaskDetail uploadTaskDetail = new UploadTaskDetail();
                 uploadTaskDetail.setFilePath(qiwenFile.getParent());
                 uploadTaskDetail.setFilename(qiwenFile.getNameNotExtend());
                 uploadTaskDetail.setChunkNumber(uploadFileDto.getChunkNumber());
-                uploadTaskDetail.setChunkSize((int)uploadFileDto.getChunkSize());
+                uploadTaskDetail.setChunkSize((int) uploadFileDto.getChunkSize());
                 uploadTaskDetail.setRelativePath(uploadFileDto.getRelativePath());
                 uploadTaskDetail.setTotalChunks(uploadFileDto.getTotalChunks());
-                uploadTaskDetail.setTotalSize((int)uploadFileDto.getTotalSize());
+                uploadTaskDetail.setTotalSize((int) uploadFileDto.getTotalSize());
                 uploadTaskDetail.setIdentifier(uploadFileDto.getIdentifier());
                 uploadTaskDetailMapper.insert(uploadTaskDetail);
 
-            } else if (UploadFileStatusEnum.FAIL.equals(uploadFileResult.getStatus())) {
+            }
+            else if (UploadFileStatusEnum.FAIL.equals(uploadFileResult.getStatus())) {
                 LambdaQueryWrapper<UploadTaskDetail> lambdaQueryWrapper = new LambdaQueryWrapper<>();
                 lambdaQueryWrapper.eq(UploadTaskDetail::getIdentifier, uploadFileDto.getIdentifier());
                 uploadTaskDetailMapper.delete(lambdaQueryWrapper);
 
                 LambdaUpdateWrapper<UploadTask> lambdaUpdateWrapper = new LambdaUpdateWrapper<>();
-                lambdaUpdateWrapper.set(UploadTask::getUploadStatus, UploadFileStatusEnum.FAIL.getCode())
+                lambdaUpdateWrapper
+                        .set(UploadTask::getUploadStatus, UploadFileStatusEnum.FAIL.getCode())
                         .eq(UploadTask::getIdentifier, uploadFileDto.getIdentifier());
                 uploadTaskMapper.update(null, lambdaUpdateWrapper);
             }
@@ -277,12 +308,14 @@ public class FiletransferService implements IFiletransferService {
 
     }
 
-
     private String formatChatset(String str) {
         if (str == null) {
             return "";
         }
-        if (java.nio.charset.Charset.forName("ISO-8859-1").newEncoder().canEncode(str)) {
+        if (java.nio.charset.Charset
+                .forName("ISO-8859-1")
+                .newEncoder()
+                .canEncode(str)) {
             byte[] bytes = str.getBytes(StandardCharsets.ISO_8859_1);
             return new String(bytes, Charset.forName("GBK"));
         }
@@ -306,11 +339,15 @@ public class FiletransferService implements IFiletransferService {
             downloadFile.setFileUrl(fileBean.getFileUrl());
             httpServletResponse.setContentLengthLong(fileBean.getFileSize());
             downloader.download(httpServletResponse, downloadFile);
-        } else {
+        }
+        else {
 
             QiwenFile qiwenFile = new QiwenFile(userFile.getFilePath(), userFile.getFileName(), true);
-            List<UserFile> userFileList = userFileMapper.selectUserFileByLikeRightFilePath(qiwenFile.getPath() , userFile.getUserId());
-            List<String> userFileIds = userFileList.stream().map(UserFile::getUserFileId).collect(Collectors.toList());
+            List<UserFile> userFileList = userFileMapper.selectUserFileByLikeRightFilePath(qiwenFile.getPath(), userFile.getUserId());
+            List<String> userFileIds = userFileList
+                    .stream()
+                    .map(UserFile::getUserFileId)
+                    .collect(Collectors.toList());
 
             downloadUserFileList(httpServletResponse, userFile.getFilePath(), userFile.getFileName(), userFileIds);
         }
@@ -328,7 +365,8 @@ public class FiletransferService implements IFiletransferService {
         FileOutputStream f = null;
         try {
             f = new FileOutputStream(tempPath + fileName + ".zip");
-        } catch (FileNotFoundException e) {
+        }
+        catch (FileNotFoundException e) {
             e.printStackTrace();
         }
         CheckedOutputStream csum = new CheckedOutputStream(f, new Adler32());
@@ -350,7 +388,8 @@ public class FiletransferService implements IFiletransferService {
                     InputStream inputStream = downloader.getInputStream(downloadFile);
                     BufferedInputStream bis = new BufferedInputStream(inputStream);
                     try {
-                        QiwenFile qiwenFile = new QiwenFile(StrUtil.removePrefix(userFile1.getFilePath(), filePath), userFile1.getFileName() + "." + userFile1.getExtendName(), false);
+                        QiwenFile qiwenFile = new QiwenFile(StrUtil.removePrefix(userFile1.getFilePath(), filePath), userFile1.getFileName() + "." + userFile1.getExtendName(),
+                                false);
                         zos.putNextEntry(new ZipEntry(qiwenFile.getPath()));
 
                         byte[] buffer = new byte[1024];
@@ -359,18 +398,22 @@ public class FiletransferService implements IFiletransferService {
                             out.write(buffer, 0, i);
                             i = bis.read(buffer);
                         }
-                    } catch (IOException e) {
+                    }
+                    catch (IOException e) {
                         log.error("" + e);
                         e.printStackTrace();
-                    } finally {
+                    }
+                    finally {
                         IOUtils.closeQuietly(bis);
                         try {
                             out.flush();
-                        } catch (IOException e) {
+                        }
+                        catch (IOException e) {
                             e.printStackTrace();
                         }
                     }
-                } else {
+                }
+                else {
                     QiwenFile qiwenFile = new QiwenFile(StrUtil.removePrefix(userFile1.getFilePath(), filePath), userFile1.getFileName(), true);
                     // 空文件夹的处理
                     zos.putNextEntry(new ZipEntry(qiwenFile.getPath() + QiwenFile.separator));
@@ -379,12 +422,15 @@ public class FiletransferService implements IFiletransferService {
                 }
             }
 
-        } catch (Exception e) {
-            log.error("压缩过程中出现异常:"+ e);
-        } finally {
+        }
+        catch (Exception e) {
+            log.error("压缩过程中出现异常:" + e);
+        }
+        finally {
             try {
                 out.close();
-            } catch (IOException e) {
+            }
+            catch (IOException e) {
                 e.printStackTrace();
             }
         }
@@ -397,15 +443,20 @@ public class FiletransferService implements IFiletransferService {
             httpServletResponse.setContentLengthLong(tempFile.length());
             downloader.download(httpServletResponse, downloadFile);
             zipPath = UFOPUtils.getStaticPath() + "temp" + File.separator + fileName + ".zip";
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             //org.apache.catalina.connector.ClientAbortException: java.io.IOException: Connection reset by peer
-            if (e.getMessage().contains("ClientAbortException")) {
+            if (e
+                    .getMessage()
+                    .contains("ClientAbortException")) {
                 //该异常忽略不做处理
-            } else {
+            }
+            else {
                 log.error("下传zip文件出现异常：{}", e.getMessage());
             }
 
-        } finally {
+        }
+        finally {
             File file = new File(zipPath);
             if (file.exists()) {
                 file.delete();
@@ -427,14 +478,19 @@ public class FiletransferService implements IFiletransferService {
         try {
             if ("true".equals(previewDTO.getIsMin())) {
                 previewer.imageThumbnailPreview(httpServletResponse, previewFile);
-            } else {
+            }
+            else {
                 previewer.imageOriginalPreview(httpServletResponse, previewFile);
             }
-        } catch (Exception e){
-                //org.apache.catalina.connector.ClientAbortException: java.io.IOException: 你的主机中的软件中止了一个已建立的连接。
-                if (e.getMessage().contains("ClientAbortException")) {
+        }
+        catch (Exception e) {
+            //org.apache.catalina.connector.ClientAbortException: java.io.IOException: 你的主机中的软件中止了一个已建立的连接。
+            if (e
+                    .getMessage()
+                    .contains("ClientAbortException")) {
                 //该异常忽略不做处理
-            } else {
+            }
+            else {
                 log.error("预览文件出现异常：{}", e.getMessage());
             }
 
@@ -444,7 +500,9 @@ public class FiletransferService implements IFiletransferService {
 
     @Override
     public void previewPictureFile(HttpServletResponse httpServletResponse, PreviewDTO previewDTO) {
-        byte[] bytesUrl = Base64.getDecoder().decode(previewDTO.getUrl());
+        byte[] bytesUrl = Base64
+                .getDecoder()
+                .decode(previewDTO.getUrl());
         PictureFile pictureFile = new PictureFile();
         pictureFile.setFileUrl(new String(bytesUrl));
         pictureFile = pictureFileMapper.selectOne(new QueryWrapper<>(pictureFile));
@@ -455,27 +513,32 @@ public class FiletransferService implements IFiletransferService {
         }
         PreviewFile previewFile = new PreviewFile();
         previewFile.setFileUrl(pictureFile.getFileUrl());
-//        previewFile.setFileSize(pictureFile.getFileSize());
+        //        previewFile.setFileSize(pictureFile.getFileSize());
         try {
 
-            String mime= MimeUtils.getMime(pictureFile.getExtendName());
+            String mime = MimeUtils.getMime(pictureFile.getExtendName());
             httpServletResponse.setHeader("Content-Type", mime);
 
             String fileName = pictureFile.getFileName() + "." + pictureFile.getExtendName();
             try {
                 fileName = new String(fileName.getBytes("utf-8"), "ISO-8859-1");
-            } catch (UnsupportedEncodingException e) {
+            }
+            catch (UnsupportedEncodingException e) {
                 e.printStackTrace();
             }
 
             httpServletResponse.addHeader("Content-Disposition", "fileName=" + fileName);// 设置文件名
 
             previewer.imageOriginalPreview(httpServletResponse, previewFile);
-        } catch (Exception e){
+        }
+        catch (Exception e) {
             //org.apache.catalina.connector.ClientAbortException: java.io.IOException: 你的主机中的软件中止了一个已建立的连接。
-            if (e.getMessage().contains("ClientAbortException")) {
+            if (e
+                    .getMessage()
+                    .contains("ClientAbortException")) {
                 //该异常忽略不做处理
-            } else {
+            }
+            else {
                 log.error("预览文件出现异常：{}", e.getMessage());
             }
 
@@ -492,10 +555,8 @@ public class FiletransferService implements IFiletransferService {
         deleter.delete(deleteFile);
     }
 
-
-
     @Override
-    public Long selectStorageSizeByUserId(String userId){
+    public Long selectStorageSizeByUserId(String userId) {
         return userFileMapper.selectStorageSizeByUserId(userId);
     }
 }

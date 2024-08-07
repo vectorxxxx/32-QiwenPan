@@ -28,8 +28,10 @@ import java.util.List;
  * Jwt过滤器（第一个过滤器）：获取用户token，查询用户信息拼装到security中，以便后续filter使用
  */
 @Component
-public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
-    private String[] ignoreUri = {"/user/register",
+public class JwtAuthenticationTokenFilter extends OncePerRequestFilter
+{
+    private String[] ignoreUri = {
+            "/user/register",
             "/user/login",
             "/user/checkuserlogininfo",
             "/filetransfer/downloadfile",
@@ -46,13 +48,9 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
             "/swagger-ui.html",
             "/office/IndexServlet"
     };
-    private String[] antWhiteUri = {"/*.html",
-            "/**/*.html",
-            "/**/*.css",
-            "/**/*.js",
-            "/swagger-ui/**",
-            "/webSocket/**",
-            "/error/**",};
+    private String[] antWhiteUri = {
+            "/*.html", "/**/*.html", "/**/*.css", "/**/*.js", "/swagger-ui/**", "/webSocket/**", "/error/**",
+    };
     @Autowired
     private UserService userService;
     @Resource
@@ -62,8 +60,7 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
     String qiwenVersion;
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
-            throws ServletException, IOException {
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws ServletException, IOException {
         String version = sysParamService.getValue("version");
         if (!qiwenVersion.equals(version)) {
             throw new QiwenException(999999, "脚本未初始化，请在数据库执行数据初始化脚本，存放路径： '/resources/import.sql'！");
@@ -85,20 +82,24 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
         String token = request.getHeader("token");
         if (StringUtils.isEmpty(token)) {
             throw new NotLoginException("用户未登录");
-        } else {
+        }
+        else {
             String userId = userService.getUserIdByToken(token);
             if (userId == null) {
                 throw new NotLoginException("用户未登录");
             }
             // 验证
-            if (SecurityContextHolder.getContext().getAuthentication() == null) {
+            if (SecurityContextHolder
+                    .getContext()
+                    .getAuthentication() == null) {
                 UserDetails userDetails = userService.loadUserByUsername(String.valueOf(userId));
                 if (userDetails.isEnabled()) {
-                    UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken = new UsernamePasswordAuthenticationToken(
-                            userDetails, null, userDetails.getAuthorities());
-                    usernamePasswordAuthenticationToken
-                            .setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                    SecurityContextHolder.getContext().setAuthentication(usernamePasswordAuthenticationToken);
+                    UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken = new UsernamePasswordAuthenticationToken(userDetails, null,
+                            userDetails.getAuthorities());
+                    usernamePasswordAuthenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder
+                            .getContext()
+                            .setAuthentication(usernamePasswordAuthenticationToken);
                 }
             }
         }

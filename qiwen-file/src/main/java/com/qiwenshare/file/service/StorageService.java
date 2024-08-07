@@ -16,8 +16,9 @@ import javax.annotation.Resource;
 
 @Slf4j
 @Service
-@Transactional(rollbackFor=Exception.class)
-public class StorageService extends ServiceImpl<StorageMapper, StorageBean> implements IStorageService {
+@Transactional(rollbackFor = Exception.class)
+public class StorageService extends ServiceImpl<StorageMapper, StorageBean> implements IStorageService
+{
     @Resource
     StorageMapper storageMapper;
     @Resource
@@ -40,7 +41,8 @@ public class StorageService extends ServiceImpl<StorageMapper, StorageBean> impl
             storageBean.setUserId(userId);
             storageBean.setTotalStorageSize(totalStorageSize);
             storageMapper.insert(storageBean);
-        } else  {
+        }
+        else {
             totalStorageSize = storageBean.getTotalStorageSize();
         }
 
@@ -65,7 +67,8 @@ public class StorageService extends ServiceImpl<StorageMapper, StorageBean> impl
             storageBean.setUserId(userId);
             storageBean.setTotalStorageSize(totalStorageSize);
             storageMapper.insert(storageBean);
-        } else  {
+        }
+        else {
             totalStorageSize = storageBean.getTotalStorageSize();
         }
 
@@ -74,7 +77,7 @@ public class StorageService extends ServiceImpl<StorageMapper, StorageBean> impl
         }
 
         Long storageSize = userFileMapper.selectStorageSizeByUserId(userId);
-        if (storageSize == null ){
+        if (storageSize == null) {
             storageSize = 0L;
         }
         if (storageSize + fileSize > totalStorageSize) {

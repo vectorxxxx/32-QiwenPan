@@ -8,8 +8,16 @@ import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 
-public interface CommonFileMapper extends BaseMapper<CommonFile> {
-    List<CommonFileUser> selectCommonFileUser(@Param("userId") String userId);
-    List<CommonFileListVo> selectCommonFileByUser(@Param("userId") String userId, @Param("sessionUserId") String sessionUserId);
+public interface CommonFileMapper extends BaseMapper<CommonFile>
+{
+    List<CommonFileUser> selectCommonFileUser(
+            @Param("userId")
+                    String userId);
+
+    List<CommonFileListVo> selectCommonFileByUser(
+            @Param("userId")
+                    String userId,
+            @Param("sessionUserId")
+                    String sessionUserId);
 
 }

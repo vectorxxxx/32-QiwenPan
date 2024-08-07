@@ -18,7 +18,13 @@ import com.qiwenshare.file.component.FileDealComp;
 import com.qiwenshare.file.domain.Share;
 import com.qiwenshare.file.domain.ShareFile;
 import com.qiwenshare.file.domain.UserFile;
-import com.qiwenshare.file.dto.sharefile.*;
+import com.qiwenshare.file.dto.sharefile.CheckEndTimeDTO;
+import com.qiwenshare.file.dto.sharefile.CheckExtractionCodeDTO;
+import com.qiwenshare.file.dto.sharefile.SaveShareFileDTO;
+import com.qiwenshare.file.dto.sharefile.ShareFileDTO;
+import com.qiwenshare.file.dto.sharefile.ShareFileListDTO;
+import com.qiwenshare.file.dto.sharefile.ShareListDTO;
+import com.qiwenshare.file.dto.sharefile.ShareTypeDTO;
 import com.qiwenshare.file.io.QiwenFile;
 import com.qiwenshare.file.vo.share.ShareFileListVO;
 import com.qiwenshare.file.vo.share.ShareFileVO;
@@ -28,38 +34,56 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
 import java.text.ParseException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.UUID;
 
-@Tag(name = "share", description = "该接口为文件分享接口")
+@Tag(name = "share",
+     description = "该接口为文件分享接口")
 @RestController
 @Slf4j
 @RequestMapping("/share")
-public class ShareController {
+public class ShareController
+{
 
     public static final String CURRENT_MODULE = "文件分享";
 
     @Resource
-    IShareFileService shareFileService;
+    private IShareFileService shareFileService;
     @Resource
-    IShareService shareService;
+    private IShareService shareService;
     @Resource
-    IUserFileService userFileService;
+    private IUserFileService userFileService;
     @Resource
-    FileDealComp fileDealComp;
+    private FileDealComp fileDealComp;
 
-    @Operation(summary = "分享文件", description = "分享文件统一接口", tags = {"share"})
+    @Operation(summary = "分享文件",
+               description = "分享文件统一接口",
+               tags = {"share"})
     @PostMapping(value = "/sharefile")
-    @MyLog(operation = "分享文件", module = CURRENT_MODULE)
+    @MyLog(operation = "分享文件",
+           module = CURRENT_MODULE)
     @ResponseBody
-    public RestResult<ShareFileVO> shareFile( @RequestBody ShareFileDTO shareFileDTO) {
+    public RestResult<ShareFileVO> shareFile(
+            @RequestBody
+                    ShareFileDTO shareFileDTO) {
         ShareFileVO shareSecretVO = new ShareFileVO();
         JwtUser sessionUserBean = SessionUtil.getSession();
 
-        String uuid = UUID.randomUUID().toString().replace("-", "");
+        String uuid = UUID
+                .randomUUID()
+                .toString()
+                .replace("-", "");
         Share share = new Share();
         share.setShareId(IdUtil.getSnowflakeNextIdStr());
         BeanUtil.copyProperties(shareFileDTO, share);
@@ -80,8 +104,12 @@ public class ShareController {
         String[] userFileIdList = userFileIds.split(",");
         for (String userFileId : userFileIdList) {
             UserFile userFile = userFileService.getById(userFileId);
-            if (userFile.getUserId().compareTo(sessionUserBean.getUserId()) != 0) {
-                return RestResult.fail().message("您只能分享自己的文件");
+            if (userFile
+                    .getUserId()
+                    .compareTo(sessionUserBean.getUserId()) != 0) {
+                return RestResult
+                        .<ShareFileVO>fail()
+                        .message("您只能分享自己的文件");
             }
             if (userFile.getIsDir() == 1) {
                 QiwenFile qiwenFile = new QiwenFile(userFile.getFilePath(), userFile.getFileName(), true);
@@ -91,7 +119,13 @@ public class ShareController {
                     shareFile1.setShareFileId(IdUtil.getSnowflakeNextIdStr());
                     shareFile1.setUserFileId(userFile1.getUserFileId());
                     shareFile1.setShareBatchNum(uuid);
-                    shareFile1.setShareFilePath(userFile1.getFilePath().replaceFirst(userFile.getFilePath().equals("/") ? "" : userFile.getFilePath(), ""));
+                    shareFile1.setShareFilePath(userFile1
+                            .getFilePath()
+                            .replaceFirst(userFile
+                                                  .getFilePath()
+                                                  .equals("/") ?
+                                          "" :
+                                          userFile.getFilePath(), ""));
                     saveFileList.add(shareFile1);
                 }
             }
@@ -102,29 +136,36 @@ public class ShareController {
             shareFile.setShareBatchNum(uuid);
             saveFileList.add(shareFile);
 
-
         }
         shareFileService.saveBatch(saveFileList);
         shareSecretVO.setShareBatchNum(uuid);
 
-        return RestResult.success().data(shareSecretVO);
+        return RestResult
+                .<ShareFileVO>success()
+                .data(shareSecretVO);
     }
 
-    @Operation(summary = "保存分享文件", description = "用来将别人分享的文件保存到自己的网盘中", tags = {"share"})
+    @Operation(summary = "保存分享文件",
+               description = "用来将别人分享的文件保存到自己的网盘中",
+               tags = {"share"})
     @PostMapping(value = "/savesharefile")
-    @MyLog(operation = "保存分享文件", module = CURRENT_MODULE)
-    @Transactional(rollbackFor=Exception.class)
+    @MyLog(operation = "保存分享文件",
+           module = CURRENT_MODULE)
+    @Transactional(rollbackFor = Exception.class)
     @ResponseBody
-    public RestResult saveShareFile(@RequestBody SaveShareFileDTO saveShareFileDTO) {
+    public RestResult<String> saveShareFile(
+            @RequestBody
+                    SaveShareFileDTO saveShareFileDTO) {
 
         JwtUser sessionUserBean = SessionUtil.getSession();
-//        List<ShareFile> fileList = JSON.parseArray(saveShareFileDTO.getFiles(), ShareFile.class);
+        //        List<ShareFile> fileList = JSON.parseArray(saveShareFileDTO.getFiles(), ShareFile.class);
         String savefilePath = saveShareFileDTO.getFilePath();
         String userId = sessionUserBean.getUserId();
-        String[] userFileIdArr = saveShareFileDTO.getUserFileIds().split(",");
+        String[] userFileIdArr = saveShareFileDTO
+                .getUserFileIds()
+                .split(",");
         List<UserFile> saveUserFileList = new ArrayList<>();
         for (String userFileId : userFileIdArr) {
-
 
             UserFile userFile = userFileService.getById(userFileId);
             String fileName = userFile.getFileName();
@@ -136,16 +177,22 @@ public class ShareController {
             String savefileName = fileDealComp.getRepeatFileName(userFile, savefilePath);
 
             if (userFile.getIsDir() == 1) {
-                ShareFile shareFile = shareFileService.getOne(new QueryWrapper<ShareFile>().lambda().eq(ShareFile::getUserFileId, userFileId).eq(ShareFile::getShareBatchNum, saveShareFileDTO.getShareBatchNum()));
-                List<ShareFile> shareFileList = shareFileService.list(new QueryWrapper<ShareFile>().lambda().eq(ShareFile::getShareBatchNum, saveShareFileDTO.getShareBatchNum()).likeRight(ShareFile::getShareFilePath, QiwenFile.formatPath(shareFile.getShareFilePath() +"/"+ fileName)));
-
-
+                ShareFile shareFile = shareFileService.getOne(new QueryWrapper<ShareFile>()
+                        .lambda()
+                        .eq(ShareFile::getUserFileId, userFileId)
+                        .eq(ShareFile::getShareBatchNum, saveShareFileDTO.getShareBatchNum()));
+                List<ShareFile> shareFileList = shareFileService.list(new QueryWrapper<ShareFile>()
+                        .lambda()
+                        .eq(ShareFile::getShareBatchNum, saveShareFileDTO.getShareBatchNum())
+                        .likeRight(ShareFile::getShareFilePath, QiwenFile.formatPath(shareFile.getShareFilePath() + "/" + fileName)));
 
                 for (ShareFile shareFile1 : shareFileList) {
                     UserFile userFile1 = userFileService.getById(shareFile1.getUserFileId());
                     userFile1.setUserFileId(IdUtil.getSnowflakeNextIdStr());
                     userFile1.setUserId(userId);
-                    userFile1.setFilePath(userFile1.getFilePath().replaceFirst(QiwenFile.formatPath(filePath + "/" + fileName), QiwenFile.formatPath(savefilePath + "/" + savefileName)));
+                    userFile1.setFilePath(userFile1
+                            .getFilePath()
+                            .replaceFirst(QiwenFile.formatPath(filePath + "/" + fileName), QiwenFile.formatPath(savefilePath + "/" + savefileName)));
                     saveUserFileList.add(userFile1);
                     log.info("当前文件：" + JSON.toJSONString(userFile1));
                 }
@@ -160,10 +207,12 @@ public class ShareController {
         log.info("----------" + JSON.toJSONString(saveUserFileList));
         userFileService.saveBatch(saveUserFileList);
 
-        return RestResult.success();
+        return RestResult.<String>success();
     }
 
-    @Operation(summary = "查看已分享列表", description = "查看已分享列表", tags = {"share"})
+    @Operation(summary = "查看已分享列表",
+               description = "查看已分享列表",
+               tags = {"share"})
     @GetMapping(value = "/shareList")
     @ResponseBody
     public RestResult<ShareListVO> shareList(ShareListDTO shareListDTO) {
@@ -172,11 +221,14 @@ public class ShareController {
 
         int total = shareService.selectShareListTotalCount(shareListDTO, sessionUserBean.getUserId());
 
-        return RestResult.success().dataList(shareList, total);
+        return RestResult
+                .<ShareListVO>success()
+                .dataList(shareList, total);
     }
 
-
-    @Operation(summary = "分享文件列表", description = "分享列表", tags = {"share"})
+    @Operation(summary = "分享文件列表",
+               description = "分享列表",
+               tags = {"share"})
     @GetMapping(value = "/sharefileList")
     @ResponseBody
     public RestResult<ShareFileListVO> shareFileList(ShareFileListDTO shareFileListBySecretDTO) {
@@ -186,10 +238,14 @@ public class ShareController {
         for (ShareFileListVO shareFileListVO : list) {
             shareFileListVO.setShareFilePath(shareFilePath);
         }
-        return RestResult.success().dataList(list, list.size());
+        return RestResult
+                .<ShareFileListVO>success()
+                .dataList(list, list.size());
     }
 
-    @Operation(summary = "分享类型", description = "可用此接口判断是否需要提取码", tags = {"share"})
+    @Operation(summary = "分享类型",
+               description = "可用此接口判断是否需要提取码",
+               tags = {"share"})
     @GetMapping(value = "/sharetype")
     @ResponseBody
     public RestResult<ShareTypeVO> shareType(ShareTypeDTO shareTypeDTO) {
@@ -198,25 +254,35 @@ public class ShareController {
         Share share = shareService.getOne(lambdaQueryWrapper);
         ShareTypeVO shareTypeVO = new ShareTypeVO();
         shareTypeVO.setShareType(share.getShareType());
-        return RestResult.success().data(shareTypeVO);
+        return RestResult
+                .<ShareTypeVO>success()
+                .data(shareTypeVO);
     }
 
-    @Operation(summary = "校验提取码", description = "校验提取码", tags = {"share"})
+    @Operation(summary = "校验提取码",
+               description = "校验提取码",
+               tags = {"share"})
     @GetMapping(value = "/checkextractioncode")
     @ResponseBody
     public RestResult<String> checkExtractionCode(CheckExtractionCodeDTO checkExtractionCodeDTO) {
         LambdaQueryWrapper<Share> lambdaQueryWrapper = new LambdaQueryWrapper<>();
-        lambdaQueryWrapper.eq(Share::getShareBatchNum, checkExtractionCodeDTO.getShareBatchNum())
+        lambdaQueryWrapper
+                .eq(Share::getShareBatchNum, checkExtractionCodeDTO.getShareBatchNum())
                 .eq(Share::getExtractionCode, checkExtractionCodeDTO.getExtractionCode());
         List<Share> list = shareService.list(lambdaQueryWrapper);
         if (list.isEmpty()) {
-            return RestResult.fail().message("校验失败");
-        } else {
+            return RestResult
+                    .<String>fail()
+                    .message("校验失败");
+        }
+        else {
             return RestResult.success();
         }
     }
 
-    @Operation(summary = "校验过期时间", description = "校验过期时间", tags = {"share"})
+    @Operation(summary = "校验过期时间",
+               description = "校验过期时间",
+               tags = {"share"})
     @GetMapping(value = "/checkendtime")
     @ResponseBody
     public RestResult<String> checkEndTime(CheckEndTimeDTO checkEndTimeDTO) {
@@ -224,18 +290,24 @@ public class ShareController {
         lambdaQueryWrapper.eq(Share::getShareBatchNum, checkEndTimeDTO.getShareBatchNum());
         Share share = shareService.getOne(lambdaQueryWrapper);
         if (share == null) {
-            return RestResult.fail().message("文件不存在！");
+            return RestResult
+                    .<String>fail()
+                    .message("文件不存在！");
         }
         String endTime = share.getEndTime();
         Date endTimeDate = null;
         try {
             endTimeDate = DateUtil.getDateByFormatString(endTime, "yyyy-MM-dd HH:mm:ss");
-        } catch (ParseException e) {
-            log.error("日期解析失败：{}" , e);
         }
-        if (new Date().after(endTimeDate))  {
-            return RestResult.fail().message("分享已过期");
-        } else {
+        catch (ParseException e) {
+            log.error("日期解析失败：{}", e);
+        }
+        if (new Date().after(endTimeDate)) {
+            return RestResult
+                    .<String>fail()
+                    .message("分享已过期");
+        }
+        else {
             return RestResult.success();
         }
     }

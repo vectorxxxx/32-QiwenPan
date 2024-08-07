@@ -1,17 +1,12 @@
 /**
  * (c) Copyright Ascensio System SIA 2021
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
+ * <p>
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * <p>
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
  */
 
 package com.qiwenshare.file.office.documentserver.managers.history;
@@ -32,11 +27,16 @@ import org.springframework.stereotype.Component;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Scanner;
 
 //TODO: Rebuild completely
 @Component
-public class DefaultHistoryManager implements HistoryManager {
+public class DefaultHistoryManager implements HistoryManager
+{
 
     @Autowired
     private FileStoragePathBuilder storagePathBuilder;
@@ -50,8 +50,8 @@ public class DefaultHistoryManager implements HistoryManager {
     @Autowired
     private FileUtility fileUtility;
 
-//    @Autowired
-//    private JSONParser parser;
+    //    @Autowired
+    //    private JSONParser parser;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -71,7 +71,9 @@ public class DefaultHistoryManager implements HistoryManager {
                 Map<String, Object> dataObj = new HashMap<String, Object>();
                 String verDir = documentManager.versionDir(histDir, i, true);  // get the path to the given file version
 
-                String key = i == curVer ? document.getKey() : readFileToEnd(new File(verDir + File.separator + "key.txt"));  // get document key
+                String key = i == curVer ?
+                             document.getKey() :
+                             readFileToEnd(new File(verDir + File.separator + "key.txt"));  // get document key
                 obj.put("key", key);
                 obj.put("version", i);
 
@@ -87,12 +89,15 @@ public class DefaultHistoryManager implements HistoryManager {
                     obj.put("user", user);
                 }
 
-                dataObj.put("fileType", fileUtility.getFileExtension(document.getTitle()).replace(".", ""));
+                dataObj.put("fileType", fileUtility
+                        .getFileExtension(document.getTitle())
+                        .replace(".", ""));
                 dataObj.put("key", key);
-                dataObj.put("url", i == curVer ? document.getUrl() :
-                        documentManager.getHistoryFileUrl(document.getTitle(), i, "prev" + fileUtility.getFileExtension(document.getTitle()), true));
-//                dataObj.put("directUrl", i == curVer ? document.getDirectUrl() :
-//                        documentManager.getHistoryFileUrl(document.getTitle(), i, "prev" + fileUtility.getFileExtension(document.getTitle()), false));
+                dataObj.put("url", i == curVer ?
+                                   document.getUrl() :
+                                   documentManager.getHistoryFileUrl(document.getTitle(), i, "prev" + fileUtility.getFileExtension(document.getTitle()), true));
+                //                dataObj.put("directUrl", i == curVer ? document.getDirectUrl() :
+                //                        documentManager.getHistoryFileUrl(document.getTitle(), i, "prev" + fileUtility.getFileExtension(document.getTitle()), false));
                 dataObj.put("version", i);
 
                 if (i > 1) {  //check if the version number is greater than 1
@@ -118,7 +123,9 @@ public class DefaultHistoryManager implements HistoryManager {
                     dataObj.put("changesUrl", documentManager.getHistoryFileUrl(document.getTitle(), verdiff, "diff.zip", true));
                 }
 
-                if (jwtManager.tokenEnabled()) dataObj.put("token", jwtManager.createToken(dataObj));
+                if (jwtManager.tokenEnabled()) {
+                    dataObj.put("token", jwtManager.createToken(dataObj));
+                }
 
                 hist.add(obj);
                 histData.put(Integer.toString(i - 1), dataObj);
@@ -130,12 +137,13 @@ public class DefaultHistoryManager implements HistoryManager {
             histObj.put("history", hist);
 
             try {
-                return new String[]{objectMapper.writeValueAsString(histObj), objectMapper.writeValueAsString(histData)};
-            } catch (JsonProcessingException e) {
+                return new String[] {objectMapper.writeValueAsString(histObj), objectMapper.writeValueAsString(histData)};
+            }
+            catch (JsonProcessingException e) {
                 e.printStackTrace();
             }
         }
-        return new String[]{"", ""};
+        return new String[] {"", ""};
     }
 
     // read a file
@@ -150,7 +158,8 @@ public class DefaultHistoryManager implements HistoryManager {
                 }
                 scanner.close();
             }
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
         }
         return output;
     }

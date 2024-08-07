@@ -1,10 +1,8 @@
 package com.qiwenshare.file.service;
 
 import cn.hutool.core.bean.BeanUtil;
-import com.alibaba.fastjson2.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.qiwenshare.common.exception.QiwenException;
 import com.qiwenshare.common.operation.FileOperation;
@@ -44,8 +42,9 @@ import java.util.concurrent.Executors;
 
 @Slf4j
 @Service
-@Transactional(rollbackFor=Exception.class)
-public class FileService extends ServiceImpl<FileMapper, FileBean> implements IFileService {
+@Transactional(rollbackFor = Exception.class)
+public class FileService extends ServiceImpl<FileMapper, FileBean> implements IFileService
+{
     public static Executor executor = Executors.newFixedThreadPool(20);
     @Resource
     FileMapper fileMapper;
@@ -80,7 +79,6 @@ public class FileService extends ServiceImpl<FileMapper, FileBean> implements IF
         FileBean fileBean = fileMapper.selectById(userFile.getFileId());
         File destFile = new File(UFOPUtils.getStaticPath() + "temp" + File.separator + fileBean.getFileUrl());
 
-
         Downloader downloader = ufopFactory.getDownloader(fileBean.getStorageType());
         DownloadFile downloadFile = new DownloadFile();
         downloadFile.setFileUrl(fileBean.getFileUrl());
@@ -88,20 +86,24 @@ public class FileService extends ServiceImpl<FileMapper, FileBean> implements IF
 
         try {
             FileUtils.copyInputStreamToFile(inputStream, destFile);
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
             e.printStackTrace();
         }
 
-
         String extendName = userFile.getExtendName();
 
-        String unzipUrl = UFOPUtils.getTempFile(fileBean.getFileUrl()).getAbsolutePath().replace("." + extendName, "");
+        String unzipUrl = UFOPUtils
+                .getTempFile(fileBean.getFileUrl())
+                .getAbsolutePath()
+                .replace("." + extendName, "");
 
         List<String> fileEntryNameList = new ArrayList<>();
 
         try {
             fileEntryNameList = FileOperation.unzip(destFile, unzipUrl);
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             e.printStackTrace();
             log.error("解压失败" + e);
             throw new QiwenException(500001, "解压异常：" + e.getMessage());
@@ -115,7 +117,7 @@ public class FileService extends ServiceImpl<FileMapper, FileBean> implements IF
             UserFile qiwenDir = QiwenFileUtil.getQiwenDir(userFile.getUserId(), userFile.getFilePath(), userFile.getFileName());
             userFileMapper.insert(qiwenDir);
         }
-        for (int i = 0; i < fileEntryNameList.size(); i++){
+        for (int i = 0; i < fileEntryNameList.size(); i++) {
             String entryName = fileEntryNameList.get(i);
             asyncTaskComp.saveUnzipFile(userFile, fileBean, unzipMode, entryName, filePath);
 

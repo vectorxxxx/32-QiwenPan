@@ -4,11 +4,11 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.experimental.Accessors;
 
-
 @Data
 @Accessors(chain = true)
 @Schema(name = "系统列表Vo")
-public class SysParamVO {
+public class SysParamVO
+{
     @Schema(description = "系统参数ID")
     private Long sysParamId;
     @Schema(description = "组名")

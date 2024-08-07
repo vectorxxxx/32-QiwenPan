@@ -15,8 +15,9 @@ import java.util.List;
 
 @Slf4j
 @Service
-@Transactional(rollbackFor=Exception.class)
-public class CommonFileService extends ServiceImpl<CommonFileMapper, CommonFile> implements ICommonFileService {
+@Transactional(rollbackFor = Exception.class)
+public class CommonFileService extends ServiceImpl<CommonFileMapper, CommonFile> implements ICommonFileService
+{
 
     @Resource
     CommonFileMapper commonFileMapper;
@@ -30,6 +31,5 @@ public class CommonFileService extends ServiceImpl<CommonFileMapper, CommonFile>
     public List<CommonFileListVo> selectCommonFileByUser(String userId, String sessionUserId) {
         return commonFileMapper.selectCommonFileByUser(userId, sessionUserId);
     }
-
 
 }

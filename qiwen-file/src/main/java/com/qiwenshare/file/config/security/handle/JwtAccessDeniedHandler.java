@@ -12,7 +12,8 @@ import java.io.IOException;
  * 用户权限不足时反给前端的数据
  */
 @Component
-public class JwtAccessDeniedHandler implements AccessDeniedHandler {
+public class JwtAccessDeniedHandler implements AccessDeniedHandler
+{
 
     @Override
     public void handle(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, AccessDeniedException e) throws IOException {

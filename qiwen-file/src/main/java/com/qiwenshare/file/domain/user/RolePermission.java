@@ -5,10 +5,15 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
 
 /**
- * @author MAC
+ * @author VectorX
  * @version 1.0
  * @description: TODO
  * @date 2021/12/30 16:14
@@ -17,13 +22,14 @@ import javax.persistence.*;
 @Table(name = "role_permission")
 @Entity
 @TableName("role_permission")
-public class RolePermission {
+public class RolePermission
+{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @TableId(type = IdType.AUTO)
     private Long id;
-    @Column(columnDefinition="bigint(20) comment '角色id'")
+    @Column(columnDefinition = "bigint(20) comment '角色id'")
     private Long roleId;
-    @Column(columnDefinition="bigint(20) comment '权限id'")
+    @Column(columnDefinition = "bigint(20) comment '权限id'")
     private Long permissionId;
 }

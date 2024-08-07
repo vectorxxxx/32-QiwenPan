@@ -1,6 +1,5 @@
 package com.qiwenshare.file.controller;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.qiwenshare.common.anno.MyLog;
 import com.qiwenshare.common.result.RestResult;
 import com.qiwenshare.common.util.MimeUtils;
@@ -30,7 +29,11 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
 import javax.servlet.http.Cookie;
@@ -46,31 +49,36 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Slf4j
-@Tag(name = "filetransfer", description = "该接口为文件传输接口，主要用来做文件的上传、下载和预览")
+@Tag(name = "filetransfer",
+     description = "该接口为文件传输接口，主要用来做文件的上传、下载和预览")
 @RestController
 @RequestMapping("/filetransfer")
-public class FiletransferController {
+public class FiletransferController
+{
 
     @Resource
-    IFiletransferService filetransferService;
+    private IFiletransferService filetransferService;
 
     @Resource
-    IFileService fileService;
+    private  IFileService fileService;
     @Resource
-    IUserFileService userFileService;
+    private  IUserFileService userFileService;
     @Resource
-    FileDealComp fileDealComp;
+    private   FileDealComp fileDealComp;
     @Resource
-    StorageService storageService;
+    private   StorageService storageService;
     @Resource
-    UFOPFactory ufopFactory;
-
+    private  UFOPFactory ufopFactory;
 
     public static final String CURRENT_MODULE = "文件传输接口";
 
-    @Operation(summary = "极速上传", description = "校验文件MD5判断文件是否存在，如果存在直接上传成功并返回skipUpload=true，如果不存在返回skipUpload=false需要再次调用该接口的POST方法", tags = {"filetransfer"})
-    @RequestMapping(value = "/uploadfile", method = RequestMethod.GET)
-    @MyLog(operation = "极速上传", module = CURRENT_MODULE)
+    @Operation(summary = "极速上传",
+               description = "校验文件MD5判断文件是否存在，如果存在直接上传成功并返回skipUpload=true，如果不存在返回skipUpload=false需要再次调用该接口的POST方法",
+               tags = {"filetransfer"})
+    @RequestMapping(value = "/uploadfile",
+                    method = RequestMethod.GET)
+    @MyLog(operation = "极速上传",
+           module = CURRENT_MODULE)
     @ResponseBody
     public RestResult<UploadFileVo> uploadFileSpeed(UploadFileDTO uploadFileDto) {
 
@@ -78,16 +86,24 @@ public class FiletransferController {
 
         boolean isCheckSuccess = storageService.checkStorage(SessionUtil.getUserId(), uploadFileDto.getTotalSize());
         if (!isCheckSuccess) {
-            return RestResult.fail().message("存储空间不足");
+            return RestResult
+                    .<UploadFileVo>fail()
+                    .message("存储空间不足");
         }
         UploadFileVo uploadFileVo = filetransferService.uploadFileSpeed(uploadFileDto);
-        return RestResult.success().data(uploadFileVo);
+        return RestResult
+                .<UploadFileVo>success()
+                .data(uploadFileVo);
 
     }
 
-    @Operation(summary = "上传文件", description = "真正的上传文件接口", tags = {"filetransfer"})
-    @RequestMapping(value = "/uploadfile", method = RequestMethod.POST)
-    @MyLog(operation = "上传文件", module = CURRENT_MODULE)
+    @Operation(summary = "上传文件",
+               description = "真正的上传文件接口",
+               tags = {"filetransfer"})
+    @RequestMapping(value = "/uploadfile",
+                    method = RequestMethod.POST)
+    @MyLog(operation = "上传文件",
+           module = CURRENT_MODULE)
     @ResponseBody
     public RestResult<UploadFileVo> uploadFile(HttpServletRequest request, UploadFileDTO uploadFileDto) {
 
@@ -96,14 +112,19 @@ public class FiletransferController {
         filetransferService.uploadFile(request, uploadFileDto, sessionUserBean.getUserId());
 
         UploadFileVo uploadFileVo = new UploadFileVo();
-        return RestResult.success().data(uploadFileVo);
+        return RestResult
+                .<UploadFileVo>success()
+                .data(uploadFileVo);
 
     }
 
-
-    @Operation(summary = "下载文件", description = "下载文件接口", tags = {"filetransfer"})
-    @MyLog(operation = "下载文件", module = CURRENT_MODULE)
-    @RequestMapping(value = "/downloadfile", method = RequestMethod.GET)
+    @Operation(summary = "下载文件",
+               description = "下载文件接口",
+               tags = {"filetransfer"})
+    @MyLog(operation = "下载文件",
+           module = CURRENT_MODULE)
+    @RequestMapping(value = "/downloadfile",
+                    method = RequestMethod.GET)
     public void downloadFile(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, DownloadFileDTO downloadFileDTO) {
         Cookie[] cookieArr = httpServletRequest.getCookies();
         String token = "";
@@ -114,9 +135,7 @@ public class FiletransferController {
                 }
             }
         }
-        boolean authResult = fileDealComp.checkAuthDownloadAndPreview(downloadFileDTO.getShareBatchNum(),
-                downloadFileDTO.getExtractionCode(),
-                token,
+        boolean authResult = fileDealComp.checkAuthDownloadAndPreview(downloadFileDTO.getShareBatchNum(), downloadFileDTO.getExtractionCode(), token,
                 downloadFileDTO.getUserFileId(), null);
         if (!authResult) {
             log.error("没有权限下载！！！");
@@ -127,13 +146,15 @@ public class FiletransferController {
         String fileName = "";
         if (userFile.getIsDir() == 1) {
             fileName = userFile.getFileName() + ".zip";
-        } else {
+        }
+        else {
             fileName = userFile.getFileName() + "." + userFile.getExtendName();
 
         }
         try {
             fileName = new String(fileName.getBytes("utf-8"), "ISO-8859-1");
-        } catch (UnsupportedEncodingException e) {
+        }
+        catch (UnsupportedEncodingException e) {
             e.printStackTrace();
         }
 
@@ -142,9 +163,13 @@ public class FiletransferController {
         filetransferService.downloadFile(httpServletResponse, downloadFileDTO);
     }
 
-    @Operation(summary = "批量下载文件", description = "批量下载文件", tags = {"filetransfer"})
-    @RequestMapping(value = "/batchDownloadFile", method = RequestMethod.GET)
-    @MyLog(operation = "批量下载文件", module = CURRENT_MODULE)
+    @Operation(summary = "批量下载文件",
+               description = "批量下载文件",
+               tags = {"filetransfer"})
+    @RequestMapping(value = "/batchDownloadFile",
+                    method = RequestMethod.GET)
+    @MyLog(operation = "批量下载文件",
+           module = CURRENT_MODULE)
     @ResponseBody
     public void batchDownloadFile(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, BatchDownloadFileDTO batchDownloadFileDTO) {
         Cookie[] cookieArr = httpServletRequest.getCookies();
@@ -156,9 +181,7 @@ public class FiletransferController {
                 }
             }
         }
-        boolean authResult = fileDealComp.checkAuthDownloadAndPreview(batchDownloadFileDTO.getShareBatchNum(),
-                batchDownloadFileDTO.getExtractionCode(),
-                token,
+        boolean authResult = fileDealComp.checkAuthDownloadAndPreview(batchDownloadFileDTO.getShareBatchNum(), batchDownloadFileDTO.getExtractionCode(), token,
                 batchDownloadFileDTO.getUserFileIds(), null);
         if (!authResult) {
             log.error("没有权限下载！！！");
@@ -168,18 +191,22 @@ public class FiletransferController {
         String files = batchDownloadFileDTO.getUserFileIds();
         String[] userFileIdStrs = files.split(",");
         List<String> userFileIds = new ArrayList<>();
-        for(String userFileId : userFileIdStrs) {
+        for (String userFileId : userFileIdStrs) {
             UserFile userFile = userFileService.getById(userFileId);
             if (userFile.getIsDir() == 0) {
                 userFileIds.add(userFileId);
-            } else {
+            }
+            else {
                 QiwenFile qiwenFile = new QiwenFile(userFile.getFilePath(), userFile.getFileName(), true);
                 List<UserFile> userFileList = userFileService.selectUserFileByLikeRightFilePath(qiwenFile.getPath(), userFile.getUserId());
-                List<String> userFileIds1 = userFileList.stream().map(UserFile::getUserFileId).collect(Collectors.toList());
+                List<String> userFileIds1 = userFileList
+                        .stream()
+                        .map(UserFile::getUserFileId)
+                        .collect(Collectors.toList());
                 userFileIds.add(userFile.getUserFileId());
                 userFileIds.addAll(userFileIds1);
             }
-            
+
         }
         UserFile userFile = userFileService.getById(userFileIdStrs[0]);
         httpServletResponse.setContentType("application/force-download");// 设置强制下载不打开
@@ -189,18 +216,21 @@ public class FiletransferController {
         filetransferService.downloadUserFileList(httpServletResponse, userFile.getFilePath(), fileName, userFileIds);
     }
 
-    @Operation(summary="预览文件", description="用于文件预览", tags = {"filetransfer"})
+    @Operation(summary = "预览文件",
+               description = "用于文件预览",
+               tags = {"filetransfer"})
     @GetMapping("/preview")
-    public void preview(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse,  PreviewDTO previewDTO) throws IOException {
+    public void preview(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, PreviewDTO previewDTO) throws IOException {
 
         if (previewDTO.getPlatform() != null && previewDTO.getPlatform() == 2) {
             filetransferService.previewPictureFile(httpServletResponse, previewDTO);
-            return ;
+            return;
         }
         String token = "";
         if (StringUtils.isNotEmpty(previewDTO.getToken())) {
             token = previewDTO.getToken();
-        } else {
+        }
+        else {
             Cookie[] cookieArr = httpServletRequest.getCookies();
             if (cookieArr != null) {
                 for (Cookie cookie : cookieArr) {
@@ -212,10 +242,7 @@ public class FiletransferController {
         }
 
         UserFile userFile = userFileService.getById(previewDTO.getUserFileId());
-        boolean authResult = fileDealComp.checkAuthDownloadAndPreview(previewDTO.getShareBatchNum(),
-                previewDTO.getExtractionCode(),
-                token,
-                previewDTO.getUserFileId(),
+        boolean authResult = fileDealComp.checkAuthDownloadAndPreview(previewDTO.getShareBatchNum(), previewDTO.getExtractionCode(), token, previewDTO.getUserFileId(),
                 previewDTO.getPlatform());
 
         if (!authResult) {
@@ -226,7 +253,8 @@ public class FiletransferController {
         String fileName = userFile.getFileName() + "." + userFile.getExtendName();
         try {
             fileName = new String(fileName.getBytes("utf-8"), "ISO-8859-1");
-        } catch (UnsupportedEncodingException e) {
+        }
+        catch (UnsupportedEncodingException e) {
             e.printStackTrace();
         }
 
@@ -252,9 +280,14 @@ public class FiletransferController {
             Range range = new Range();
             range.setStart(start);
 
-            if (start + 1024 * 1024 * 1 >= fileBean.getFileSize().intValue()) {
-                range.setLength(fileBean.getFileSize().intValue() - start);
-            } else {
+            if (start + 1024 * 1024 * 1 >= fileBean
+                    .getFileSize()
+                    .intValue()) {
+                range.setLength(fileBean
+                        .getFileSize()
+                        .intValue() - start);
+            }
+            else {
                 range.setLength(1024 * 1024 * 1);
             }
             downloadFile.setRange(range);
@@ -273,23 +306,29 @@ public class FiletransferController {
                 httpServletResponse.setHeader("Content-Range", "bytes " + start + "-" + (fileBean.getFileSize() - 1) + "/" + fileBean.getFileSize());
                 IOUtils.copy(inputStream, outputStream);
 
-
-            } finally {
+            }
+            finally {
                 IOUtils.closeQuietly(inputStream);
                 IOUtils.closeQuietly(outputStream);
                 if (downloadFile.getOssClient() != null) {
-                    downloadFile.getOssClient().shutdown();
+                    downloadFile
+                            .getOssClient()
+                            .shutdown();
                 }
             }
 
-        } else {
+        }
+        else {
             filetransferService.previewFile(httpServletResponse, previewDTO);
         }
 
     }
 
-    @Operation(summary = "获取存储信息", description = "获取存储信息", tags = {"filetransfer"})
-    @RequestMapping(value = "/getstorage", method = RequestMethod.GET)
+    @Operation(summary = "获取存储信息",
+               description = "获取存储信息",
+               tags = {"filetransfer"})
+    @RequestMapping(value = "/getstorage",
+                    method = RequestMethod.GET)
     @ResponseBody
     public RestResult<StorageBean> getStorage() {
 
@@ -298,16 +337,16 @@ public class FiletransferController {
 
         storageBean.setUserId(sessionUserBean.getUserId());
 
-
         Long storageSize = filetransferService.selectStorageSizeByUserId(sessionUserBean.getUserId());
         StorageBean storage = new StorageBean();
         storage.setUserId(sessionUserBean.getUserId());
         storage.setStorageSize(storageSize);
         Long totalStorageSize = storageService.getTotalStorageSize(sessionUserBean.getUserId());
         storage.setTotalStorageSize(totalStorageSize);
-        return RestResult.success().data(storage);
+        return RestResult
+                .<StorageBean>success()
+                .data(storage);
 
     }
-
 
 }

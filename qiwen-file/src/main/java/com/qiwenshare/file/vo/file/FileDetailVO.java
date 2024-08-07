@@ -5,13 +5,14 @@ import com.qiwenshare.file.domain.Music;
 import lombok.Data;
 
 /**
- * @author MAC
+ * @author VectorX
  * @version 1.0
  * @description: TODO
  * @date 2022/4/28 23:45
  */
 @Data
-public class FileDetailVO {
+public class FileDetailVO
+{
     private String fileId;
 
     private String timeStampName;
@@ -29,7 +30,6 @@ public class FileDetailVO {
     private String userFileId;
 
     private Long userId;
-
 
     private String fileName;
 

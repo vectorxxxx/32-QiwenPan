@@ -18,17 +18,17 @@ import java.util.List;
 
 @Slf4j
 @Controller
-public class TaskController {
+public class TaskController
+{
 
     @Resource
-    UserFileService userFileService;
+    private UserFileService userFileService;
     @Resource
-    FileDealComp fileDealComp;
+    private FileDealComp fileDealComp;
     @Resource
-    IShareFileService shareFileService;
+    private IShareFileService shareFileService;
     @Autowired
     private ElasticsearchClient elasticsearchClient;
-
 
     @Scheduled(fixedRate = 1000 * 60 * 60 * 24)
     public void updateElasticSearch() {
@@ -36,13 +36,22 @@ public class TaskController {
         for (int i = 0; i < userfileList.size(); i++) {
             try {
 
-                QiwenFile ufopFile = new QiwenFile(userfileList.get(i).getFilePath(), userfileList.get(i).getFileName(), userfileList.get(i).getIsDir() == 1);
-                fileDealComp.restoreParentFilePath(ufopFile, userfileList.get(i).getUserId());
+                QiwenFile ufopFile = new QiwenFile(userfileList
+                        .get(i)
+                        .getFilePath(), userfileList
+                        .get(i)
+                        .getFileName(), userfileList
+                        .get(i)
+                        .getIsDir() == 1);
+                fileDealComp.restoreParentFilePath(ufopFile, userfileList
+                        .get(i)
+                        .getUserId());
                 if (i % 1000 == 0 || i == userfileList.size() - 1) {
                     log.info("目录健康检查进度：" + (i + 1) + "/" + userfileList.size());
                 }
 
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
                 log.error(e.getMessage());
             }
         }
@@ -59,11 +68,14 @@ public class TaskController {
         for (UserFile userFile : list) {
             try {
                 String path = QiwenFile.formatPath(userFile.getFilePath());
-                if (!userFile.getFilePath().equals(path)) {
+                if (!userFile
+                        .getFilePath()
+                        .equals(path)) {
                     userFile.setFilePath(path);
                     userFileService.updateById(userFile);
                 }
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
                 // ignore
             }
         }
@@ -77,7 +89,8 @@ public class TaskController {
                 String path = QiwenFile.formatPath(shareFile.getShareFilePath());
                 shareFile.setShareFilePath(path);
                 shareFileService.updateById(shareFile);
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
                 //ignore
             }
         }

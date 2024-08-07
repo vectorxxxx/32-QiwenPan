@@ -8,16 +8,21 @@
 
 package com.qiwenshare.common.util;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.lang3.StringUtils;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.text.MessageFormat;
+import java.util.Objects;
 
 /**
- * @author MAC
+ * @author VectorX
  * @version 1.0
  */
+@Slf4j
 public class HashUtils
 {
 
@@ -26,14 +31,14 @@ public class HashUtils
             return MessageDigest.getInstance(algorithmName);
         }
         catch (NoSuchAlgorithmException var4) {
-            String msg = "No native '" + algorithmName + "' MessageDigest instance available on the current JVM.";
-
+            String msg = MessageFormat.format("No native {0} MessageDigest instance available on the current JVM.", algorithmName);
+            log.error(msg, var4);
         }
         return null;
     }
 
     public static String hashHex(String algorithmName, String source, String salt, int hashIterations) {
-        if (salt == null) {
+        if (StringUtils.isBlank(salt)) {
             return hashHex(algorithmName, source.getBytes(StandardCharsets.UTF_8), null, hashIterations);
         }
         else {
@@ -49,15 +54,18 @@ public class HashUtils
 
     public static byte[] hash(byte[] bytes, String algorithmName, byte[] salt, int hashIterations) {
         MessageDigest digest = getDigest(algorithmName);
-        if (salt != null) {
+
+        // 若有盐值
+        if (Objects.nonNull(salt)) {
             digest.reset();
             digest.update(salt);
         }
 
+        // 初次哈希
         byte[] hashed = digest.digest(bytes);
-        int iterations = hashIterations - 1;
 
-        for (int i = 0; i < iterations; ++i) {
+        // 迭代哈希（增强哈希的复杂性和安全性）
+        for (int i = 1; i < hashIterations; i++) {
             digest.reset();
             hashed = digest.digest(hashed);
         }

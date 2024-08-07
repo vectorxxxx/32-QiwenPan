@@ -4,10 +4,11 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.qiwenshare.file.domain.Notice;
 import com.qiwenshare.file.dto.notice.NoticeListDTO;
+import com.qiwenshare.file.vo.notice.NoticeVO;
 
-public interface INoticeService extends IService<Notice> {
+public interface INoticeService extends IService<Notice>
+{
 
-
-    IPage<Notice> selectUserPage(NoticeListDTO noticeListDTO);
+    IPage<NoticeVO> selectUserPage(NoticeListDTO noticeListDTO);
 
 }

@@ -1,11 +1,13 @@
 package com.qiwenshare.common.result;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 /**
  * 结果类枚举
  */
 @Getter
+@AllArgsConstructor
 public enum ResultCodeEnum
 {
     SUCCESS(true, 000000, "成功"),
@@ -32,10 +34,4 @@ public enum ResultCodeEnum
     private Integer code;
     // 响应信息
     private String message;
-
-    ResultCodeEnum(boolean success, Integer code, String message) {
-        this.success = success;
-        this.code = code;
-        this.message = message;
-    }
 }

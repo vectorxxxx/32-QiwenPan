@@ -7,7 +7,8 @@ import com.qiwenshare.file.domain.OperationLogBean;
 
 import javax.servlet.http.HttpServletRequest;
 
-public class OperationLogUtil {
+public class OperationLogUtil
+{
 
     /**
      * 构造操作日志参数

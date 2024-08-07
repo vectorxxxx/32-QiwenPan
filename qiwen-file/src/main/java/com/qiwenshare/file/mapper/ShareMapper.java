@@ -6,8 +6,10 @@ import com.qiwenshare.file.vo.share.ShareListVO;
 
 import java.util.List;
 
-public interface ShareMapper  extends BaseMapper<Share> {
+public interface ShareMapper extends BaseMapper<Share>
+{
 
-    List<ShareListVO> selectShareList(String shareFilePath,String shareBatchNum, Long beginCount, Long pageCount, String userId);
-    int selectShareListTotalCount(String shareFilePath,String shareBatchNum, String userId);
+    List<ShareListVO> selectShareList(String shareFilePath, String shareBatchNum, Long beginCount, Long pageCount, String userId);
+
+    int selectShareListTotalCount(String shareFilePath, String shareBatchNum, String userId);
 }

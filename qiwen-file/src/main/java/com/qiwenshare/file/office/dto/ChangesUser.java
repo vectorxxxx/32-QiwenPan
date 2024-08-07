@@ -7,7 +7,8 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class ChangesUser {
+public class ChangesUser
+{
     private String id;
     private String name;
 }

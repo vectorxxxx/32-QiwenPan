@@ -8,7 +8,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  */
 @Data
 @ConfigurationProperties(prefix = "spring.async-thread-pool")
-public class AsyncThreadPoolProperties  {
+public class AsyncThreadPoolProperties
+{
     /**
      * 是否启动异步线程池，默认 false
      */
@@ -16,11 +17,11 @@ public class AsyncThreadPoolProperties  {
     /**
      * 核心线程数,默认：Java虚拟机可用线程数
      */
-    private Integer corePoolSize=8;
+    private Integer corePoolSize = 8;
     /**
      * 线程池最大线程数,默认：40000
      */
-    private Integer maxPoolSize=500;
+    private Integer maxPoolSize = 500;
     /**
      * 线程队列最大线程数,默认：80000
      */

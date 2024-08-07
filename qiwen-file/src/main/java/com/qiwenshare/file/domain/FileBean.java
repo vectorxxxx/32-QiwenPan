@@ -8,53 +8,59 @@ import com.qiwenshare.common.util.DateUtil;
 import com.qiwenshare.ufop.operation.upload.domain.UploadFileResult;
 import lombok.Data;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
 
 /**
  * 文件实体类
  *
- * @author ma116
+ * @author VectorX
  */
 @Data
 @Table(name = "file")
 @Entity
 @TableName("file")
-public class FileBean {
+public class FileBean
+{
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     @TableId(type = IdType.AUTO)
-    @Column(columnDefinition="varchar(20)")
+    @Column(columnDefinition = "varchar(20)")
     private String fileId;
 
-    @Column(columnDefinition="varchar(500) comment '文件url'")
+    @Column(columnDefinition = "varchar(500) comment '文件url'")
     private String fileUrl;
 
-    @Column(columnDefinition="bigint(10) comment '文件大小'")
+    @Column(columnDefinition = "bigint(10) comment '文件大小'")
     private Long fileSize;
 
-    @Column(columnDefinition="int(1) comment '文件状态(0-失效，1-生效)'")
+    @Column(columnDefinition = "int(1) comment '文件状态(0-失效，1-生效)'")
     private Integer fileStatus;
 
-    @Column(columnDefinition="int(1) comment '存储类型'")
+    @Column(columnDefinition = "int(1) comment '存储类型'")
     private Integer storageType;
 
-    @Column(columnDefinition="varchar(200) comment 'md5唯一标识'")
+    @Column(columnDefinition = "varchar(200) comment 'md5唯一标识'")
     private String identifier;
 
-    @Column(columnDefinition="varchar(25) comment '创建时间'")
+    @Column(columnDefinition = "varchar(25) comment '创建时间'")
     private String createTime;
 
-    @Column(columnDefinition="varchar(20) comment '创建用户id'")
+    @Column(columnDefinition = "varchar(20) comment '创建用户id'")
     private String createUserId;
 
-    @Column(columnDefinition="varchar(25) comment '修改时间'")
+    @Column(columnDefinition = "varchar(25) comment '修改时间'")
     private String modifyTime;
 
-    @Column(columnDefinition="varchar(20) comment '修改用户id'")
+    @Column(columnDefinition = "varchar(20) comment '修改用户id'")
     private String modifyUserId;
 
-    public FileBean(){
+    public FileBean() {
 
     }
 
@@ -63,7 +69,9 @@ public class FileBean {
         this.fileUrl = uploadFileResult.getFileUrl();
         this.fileSize = uploadFileResult.getFileSize();
         this.fileStatus = 1;
-        this.storageType = uploadFileResult.getStorageType().getCode();
+        this.storageType = uploadFileResult
+                .getStorageType()
+                .getCode();
         this.identifier = uploadFileResult.getIdentifier();
         this.createTime = DateUtil.getCurrentTime();
 

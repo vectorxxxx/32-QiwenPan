@@ -5,7 +5,8 @@ import lombok.Data;
 
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class FileSearch {
+public class FileSearch
+{
     private String indexName;
     private String userFileId;
     private String fileId;

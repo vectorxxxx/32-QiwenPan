@@ -10,11 +10,14 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-public class ElasticSearchConfig {
+public class ElasticSearchConfig
+{
     @Bean
-    public ElasticsearchClient elasticsearchClient(){
-        RestClient client = RestClient.builder(new HttpHost("localhost", 9200,"http")).build();
-        ElasticsearchTransport transport = new RestClientTransport(client,new JacksonJsonpMapper());
+    public ElasticsearchClient elasticsearchClient() {
+        RestClient client = RestClient
+                .builder(new HttpHost("localhost", 9200, "http"))
+                .build();
+        ElasticsearchTransport transport = new RestClientTransport(client, new JacksonJsonpMapper());
         return new ElasticsearchClient(transport);
     }
 }

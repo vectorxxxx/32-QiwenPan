@@ -184,8 +184,8 @@
                         </goals>
                         <configuration>
                             <target>
-                                <delete dir="${release-path}" />
-                                <copy todir="${release-path}" >
+                                <delete dir="${release-path}"/>
+                                <copy todir="${release-path}">
                                     <fileset dir="target/${app-name}/${app-name}">
                                         <exclude name="**/*-android-*.jar"/>
                                     </fileset>

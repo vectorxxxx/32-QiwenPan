@@ -7,15 +7,28 @@ import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 
-public interface UserMapper extends BaseMapper<UserBean> {
+public interface UserMapper extends BaseMapper<UserBean>
+{
     int insertUser(UserBean userBean);
 
-    int insertUserRole(@Param("userId") String userId, @Param("roleId") long roleId);
+    int insertUserRole(
+            @Param("userId")
+                    String userId,
+            @Param("roleId")
+                    long roleId);
 
-    List<Role>  selectRoleListByUserId(@Param("userId") String userId);
+    List<Role> selectRoleListByUserId(
+            @Param("userId")
+                    String userId);
 
-    String selectSaltByTelephone(@Param("telephone") String telephone);
+    String selectSaltByTelephone(
+            @Param("telephone")
+                    String telephone);
 
-    UserBean selectUserByTelephoneAndPassword(@Param("telephone") String telephone, @Param("password") String password);
+    UserBean selectUserByTelephoneAndPassword(
+            @Param("telephone")
+                    String telephone,
+            @Param("password")
+                    String password);
 
 }

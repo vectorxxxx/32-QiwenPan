@@ -1,6 +1,5 @@
 package com.qiwenshare.common.util;
 
-//import cn.hutool.core.util.RandomUtil;
 
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -11,6 +10,12 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
+/**
+ * @author VectorX
+ * @version 1.0.0
+ * @description 日期实用程序
+ * @date 2024/08/06
+ */
 public class DateUtil
 {
 
@@ -21,8 +26,10 @@ public class DateUtil
      */
     public static String getCurrentTime() {
         Date date = new Date();
-        String stringDate = String.format("%tF %<tT", date);
-        return stringDate;
+        // %tF：表示日期的格式，等同于 yyyy-MM-dd。它会输出当前日期的年、月、日部分。
+        // %<tT：表示时间的格式，等同于 HH:mm:ss。这里的 < 符号表示使用前面格式化的对象（在这个例子中是 date），而 tT 则表示时间的格式。
+        // %tF %<tT：表示输出当前的日期和时间，格式为 yyyy-MM-dd HH:mm:ss。
+        return String.format("%tF %<tT", date);
     }
 
     /**
@@ -33,8 +40,7 @@ public class DateUtil
      */
     public static Date getDateByFormatString(String stringDate, String formatString) throws ParseException {
         DateFormat dateFormat = new SimpleDateFormat(formatString);
-        Date date = dateFormat.parse(stringDate);
-        return date;
+        return dateFormat.parse(stringDate);
     }
 
     /**
@@ -88,8 +94,7 @@ public class DateUtil
     public static int getDayOfYear(Date date) {
         Calendar cal = Calendar.getInstance();
         cal.setTime(date);
-        int day = cal.get(Calendar.DAY_OF_YEAR);
-        return day;
+        return cal.get(Calendar.DAY_OF_YEAR);
     }
 
     /**
@@ -101,8 +106,7 @@ public class DateUtil
     public static int getYear(Date date) {
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(date);
-        int year = calendar.get(Calendar.YEAR);
-        return year;
+        return calendar.get(Calendar.YEAR);
     }
 
     /**
@@ -118,9 +122,13 @@ public class DateUtil
         return false;
     }
 
+    /**
+     * 获取时间戳
+     *
+     * @return long
+     */
     public static long getTime() {
-        long time = new Date().getTime();
-        return time;
+        return new Date().getTime();
     }
 
     public static List<String> getRecent30DateList() {
@@ -130,7 +138,7 @@ public class DateUtil
         String maxDateStr = date;
         String minDateStr = "";
         Calendar calc = Calendar.getInstance();
-        List<String> datefor30List = new ArrayList<String>();
+        List<String> datefor30List = new ArrayList<>();
         try {
             for (int i = 0; i < 30; i++) {
                 calc.setTime(fmt.parse(maxDateStr));
@@ -148,9 +156,5 @@ public class DateUtil
         return datefor30List;
 
     }
-
-    //    public static void main(String[] args) {
-    //        System.out.println(RandomUtil.randomInt(6));
-    //    }
 
 }

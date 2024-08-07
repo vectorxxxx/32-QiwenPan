@@ -36,7 +36,8 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @Transactional(rollbackFor = Exception.class)
-public class UserFileService extends ServiceImpl<UserFileMapper, UserFile> implements IUserFileService {
+public class UserFileService extends ServiceImpl<UserFileMapper, UserFile> implements IUserFileService
+{
     @Resource
     UserFileMapper userFileMapper;
     @Resource
@@ -46,11 +47,11 @@ public class UserFileService extends ServiceImpl<UserFileMapper, UserFile> imple
 
     public static Executor executor = Executors.newFixedThreadPool(20);
 
-
     @Override
     public List<UserFile> selectUserFileByNameAndPath(String fileName, String filePath, String userId) {
         LambdaQueryWrapper<UserFile> lambdaQueryWrapper = new LambdaQueryWrapper<>();
-        lambdaQueryWrapper.eq(UserFile::getFileName, fileName)
+        lambdaQueryWrapper
+                .eq(UserFile::getFileName, fileName)
                 .eq(UserFile::getFilePath, filePath)
                 .eq(UserFile::getUserId, userId)
                 .eq(UserFile::getDeleteFlag, 0);
@@ -60,14 +61,14 @@ public class UserFileService extends ServiceImpl<UserFileMapper, UserFile> imple
     @Override
     public List<UserFile> selectSameUserFile(String fileName, String filePath, String extendName, String userId) {
         LambdaQueryWrapper<UserFile> lambdaQueryWrapper = new LambdaQueryWrapper<>();
-        lambdaQueryWrapper.eq(UserFile::getFileName, fileName)
+        lambdaQueryWrapper
+                .eq(UserFile::getFileName, fileName)
                 .eq(UserFile::getFilePath, filePath)
                 .eq(UserFile::getUserId, userId)
                 .eq(UserFile::getExtendName, extendName)
                 .eq(UserFile::getDeleteFlag, "0");
         return userFileMapper.selectList(lambdaQueryWrapper);
     }
-
 
     @Override
     public IPage<FileListVO> userFileList(String userId, String filePath, Long currentPage, Long pageCount) {
@@ -76,7 +77,8 @@ public class UserFileService extends ServiceImpl<UserFileMapper, UserFile> imple
         JwtUser sessionUserBean = SessionUtil.getSession();
         if (userId == null) {
             userFile.setUserId(sessionUserBean.getUserId());
-        } else {
+        }
+        else {
             userFile.setUserId(userId);
         }
 
@@ -98,7 +100,8 @@ public class UserFileService extends ServiceImpl<UserFileMapper, UserFile> imple
         }
         try {
             userFileMapper.updateById(userFile);
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             log.warn(e.getMessage());
         }
         //移动子目录
@@ -109,14 +112,17 @@ public class UserFileService extends ServiceImpl<UserFileMapper, UserFile> imple
             List<UserFile> list = selectUserFileByLikeRightFilePath(oldfilePath, userId);
 
             for (UserFile newUserFile : list) {
-                newUserFile.setFilePath(newUserFile.getFilePath().replaceFirst(oldfilePath, newfilePath));
+                newUserFile.setFilePath(newUserFile
+                        .getFilePath()
+                        .replaceFirst(oldfilePath, newfilePath));
                 if (newUserFile.getIsDir() == 0) {
                     String repeatFileName = fileDealComp.getRepeatFileName(newUserFile, newUserFile.getFilePath());
                     newUserFile.setFileName(repeatFileName);
                 }
                 try {
                     userFileMapper.updateById(newUserFile);
-                } catch (Exception e) {
+                }
+                catch (Exception e) {
                     log.warn(e.getMessage());
                 }
             }
@@ -140,19 +146,21 @@ public class UserFileService extends ServiceImpl<UserFileMapper, UserFile> imple
         }
         try {
             userFileMapper.insert(userFile);
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             log.warn(e.getMessage());
         }
 
         oldfilePath = new QiwenFile(oldfilePath, fileName, true).getPath();
         newfilePath = new QiwenFile(newfilePath, fileName, true).getPath();
 
-
         if (userFile.isDirectory()) {
             List<UserFile> subUserFileList = userFileMapper.selectUserFileByLikeRightFilePath(oldfilePath, oldUserId);
 
             for (UserFile newUserFile : subUserFileList) {
-                newUserFile.setFilePath(newUserFile.getFilePath().replaceFirst(oldfilePath, newfilePath));
+                newUserFile.setFilePath(newUserFile
+                        .getFilePath()
+                        .replaceFirst(oldfilePath, newfilePath));
                 newUserFile.setUserFileId(IdUtil.getSnowflakeNextIdStr());
                 if (newUserFile.isDirectory()) {
                     String repeatFileName = fileDealComp.getRepeatFileName(newUserFile, newUserFile.getFilePath());
@@ -161,7 +169,8 @@ public class UserFileService extends ServiceImpl<UserFileMapper, UserFile> imple
                 newUserFile.setUserId(userId);
                 try {
                     userFileMapper.insert(newUserFile);
-                } catch (Exception e) {
+                }
+                catch (Exception e) {
                     log.warn(e.getMessage());
                 }
             }
@@ -191,20 +200,23 @@ public class UserFileService extends ServiceImpl<UserFileMapper, UserFile> imple
     @Override
     public List<UserFile> selectFilePathTreeByUserId(String userId) {
         LambdaQueryWrapper<UserFile> lambdaQueryWrapper = new LambdaQueryWrapper<>();
-        lambdaQueryWrapper.eq(UserFile::getUserId, userId)
+        lambdaQueryWrapper
+                .eq(UserFile::getUserId, userId)
                 .eq(UserFile::getIsDir, 1)
                 .eq(UserFile::getDeleteFlag, 0);
         return userFileMapper.selectList(lambdaQueryWrapper);
     }
 
-
     @Override
     public void deleteUserFile(String userFileId, String sessionUserId) {
         UserFile userFile = userFileMapper.selectById(userFileId);
-        String uuid = UUID.randomUUID().toString();
+        String uuid = UUID
+                .randomUUID()
+                .toString();
         if (userFile.getIsDir() == 1) {
             LambdaUpdateWrapper<UserFile> userFileLambdaUpdateWrapper = new LambdaUpdateWrapper<UserFile>();
-            userFileLambdaUpdateWrapper.set(UserFile::getDeleteFlag, RandomUtil.randomInt(FileConstant.deleteFileRandomSize))
+            userFileLambdaUpdateWrapper
+                    .set(UserFile::getDeleteFlag, RandomUtil.randomInt(FileConstant.deleteFileRandomSize))
                     .set(UserFile::getDeleteBatchNum, uuid)
                     .set(UserFile::getDeleteTime, DateUtil.getCurrentTime())
                     .eq(UserFile::getUserFileId, userFileId);
@@ -213,9 +225,11 @@ public class UserFileService extends ServiceImpl<UserFileMapper, UserFile> imple
             String filePath = new QiwenFile(userFile.getFilePath(), userFile.getFileName(), true).getPath();
             updateFileDeleteStateByFilePath(filePath, uuid, sessionUserId);
 
-        } else {
+        }
+        else {
             LambdaUpdateWrapper<UserFile> userFileLambdaUpdateWrapper = new LambdaUpdateWrapper<>();
-            userFileLambdaUpdateWrapper.set(UserFile::getDeleteFlag, RandomUtil.randomInt(1, FileConstant.deleteFileRandomSize))
+            userFileLambdaUpdateWrapper
+                    .set(UserFile::getDeleteFlag, RandomUtil.randomInt(1, FileConstant.deleteFileRandomSize))
                     .set(UserFile::getDeleteTime, DateUtil.getCurrentTime())
                     .set(UserFile::getDeleteBatchNum, uuid)
                     .eq(UserFile::getUserFileId, userFileId);
@@ -228,7 +242,6 @@ public class UserFileService extends ServiceImpl<UserFileMapper, UserFile> imple
         recoveryFile.setDeleteBatchNum(uuid);
         recoveryFileMapper.insert(recoveryFile);
 
-
     }
 
     @Override
@@ -239,12 +252,16 @@ public class UserFileService extends ServiceImpl<UserFileMapper, UserFile> imple
     private void updateFileDeleteStateByFilePath(String filePath, String deleteBatchNum, String userId) {
         executor.execute(() -> {
             List<UserFile> fileList = selectUserFileByLikeRightFilePath(filePath, userId);
-            List<String> userFileIds = fileList.stream().map(UserFile::getUserFileId).collect(Collectors.toList());
+            List<String> userFileIds = fileList
+                    .stream()
+                    .map(UserFile::getUserFileId)
+                    .collect(Collectors.toList());
 
-                //标记删除标志
+            //标记删除标志
             if (CollectionUtils.isNotEmpty(userFileIds)) {
                 LambdaUpdateWrapper<UserFile> userFileLambdaUpdateWrapper1 = new LambdaUpdateWrapper<>();
-                userFileLambdaUpdateWrapper1.set(UserFile::getDeleteFlag, RandomUtil.randomInt(FileConstant.deleteFileRandomSize))
+                userFileLambdaUpdateWrapper1
+                        .set(UserFile::getDeleteFlag, RandomUtil.randomInt(FileConstant.deleteFileRandomSize))
                         .set(UserFile::getDeleteTime, DateUtil.getCurrentTime())
                         .set(UserFile::getDeleteBatchNum, deleteBatchNum)
                         .in(UserFile::getUserFileId, userFileIds)
@@ -256,6 +273,5 @@ public class UserFileService extends ServiceImpl<UserFileMapper, UserFile> imple
             }
         });
     }
-
 
 }

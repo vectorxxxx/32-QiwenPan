@@ -18,21 +18,22 @@ public class UserDealComp
     /**
      * 检测用户名是否存在
      *
-     * @param userBean
+     * @param userName 用户名
+     * @return {@link Boolean }
      */
-    public Boolean isUserNameExit(UserBean userBean) {
-        final Long count = userMapper.selectCount(new LambdaQueryWrapper<UserBean>().eq(UserBean::getUsername, userBean.getUsername()));
+    public Boolean isUserNameExist(String userName) {
+        final Long count = userMapper.selectCount(new LambdaQueryWrapper<UserBean>().eq(UserBean::getUsername, userName));
         return count > 0;
     }
 
     /**
      * 检测手机号是否存在
      *
-     * @param userBean
+     * @param telephone 电话
      * @return
      */
-    public Boolean isPhoneExit(UserBean userBean) {
-        final Long count = userMapper.selectCount(new LambdaQueryWrapper<UserBean>().eq(UserBean::getTelephone, userBean.getTelephone()));
+    public Boolean isPhoneExist(String telephone) {
+        final Long count = userMapper.selectCount(new LambdaQueryWrapper<UserBean>().eq(UserBean::getTelephone, telephone));
         return count > 0;
     }
 

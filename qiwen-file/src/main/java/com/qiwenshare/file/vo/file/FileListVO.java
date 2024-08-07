@@ -1,10 +1,10 @@
 package com.qiwenshare.file.vo.file;
 
-import com.qiwenshare.file.domain.Music;
 import lombok.Data;
 
 @Data
-public class FileListVO {
+public class FileListVO
+{
     private String fileId;
 
     private String timeStampName;
@@ -22,7 +22,6 @@ public class FileListVO {
     private String userFileId;
 
     private Long userId;
-
 
     private String fileName;
 

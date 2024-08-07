@@ -5,10 +5,15 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
 
 /**
- * @author MAC
+ * @author VectorX
  * @version 1.0
  * @description: TODO
  * @date 2022/1/12 14:41
@@ -17,14 +22,15 @@ import javax.persistence.*;
 @Table(name = "commonfile")
 @Entity
 @TableName("commonfile")
-public class CommonFile {
+public class CommonFile
+{
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     @TableId(type = IdType.AUTO)
-    @Column(columnDefinition="varchar(20)")
+    @Column(columnDefinition = "varchar(20)")
     public String commonFileId;
-    @Column(columnDefinition="varchar(20) comment '用户文件id'")
+    @Column(columnDefinition = "varchar(20) comment '用户文件id'")
     public String userFileId;
-//    @Column(columnDefinition="int(2) comment '文件权限'")
-//    public Integer filePermission;
+    //    @Column(columnDefinition="int(2) comment '文件权限'")
+    //    public Integer filePermission;
 }

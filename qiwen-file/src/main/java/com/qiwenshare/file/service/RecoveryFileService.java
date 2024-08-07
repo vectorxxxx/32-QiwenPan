@@ -2,7 +2,6 @@ package com.qiwenshare.file.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.qiwenshare.file.api.IRecoveryFileService;
 import com.qiwenshare.file.component.FileDealComp;
@@ -22,8 +21,9 @@ import java.util.List;
 
 @Slf4j
 @Service
-@Transactional(rollbackFor=Exception.class)
-public class RecoveryFileService  extends ServiceImpl<RecoveryFileMapper, RecoveryFile> implements IRecoveryFileService {
+@Transactional(rollbackFor = Exception.class)
+public class RecoveryFileService extends ServiceImpl<RecoveryFileMapper, RecoveryFile> implements IRecoveryFileService
+{
     @Resource
     UserFileMapper userFileMapper;
     @Resource
@@ -31,23 +31,21 @@ public class RecoveryFileService  extends ServiceImpl<RecoveryFileMapper, Recove
     @Resource
     FileDealComp fileDealComp;
 
-
     @Override
     public void deleteUserFileByDeleteBatchNum(String deleteBatchNum) {
-
 
         LambdaQueryWrapper<UserFile> userFileLambdaQueryWrapper = new LambdaQueryWrapper<>();
         userFileLambdaQueryWrapper.eq(UserFile::getDeleteBatchNum, deleteBatchNum);
         userFileMapper.delete(userFileLambdaQueryWrapper);
-
-
 
     }
 
     @Override
     public void restorefile(String deleteBatchNum, String filePath, String sessionUserId) {
 
-        List<UserFile> restoreUserFileList = userFileMapper.selectList(new QueryWrapper<UserFile>().lambda().eq(UserFile::getDeleteBatchNum, deleteBatchNum));
+        List<UserFile> restoreUserFileList = userFileMapper.selectList(new QueryWrapper<UserFile>()
+                .lambda()
+                .eq(UserFile::getDeleteBatchNum, deleteBatchNum));
         for (UserFile restoreUserFile : restoreUserFileList) {
             restoreUserFile.setDeleteFlag(0);
             restoreUserFile.setDeleteBatchNum(deleteBatchNum);
@@ -55,10 +53,12 @@ public class RecoveryFileService  extends ServiceImpl<RecoveryFileMapper, Recove
             if (restoreUserFile.isDirectory()) {
                 if (!StringUtils.equals(fileName, restoreUserFile.getFileName())) {
                     userFileMapper.deleteById(restoreUserFile);
-                } else {
+                }
+                else {
                     userFileMapper.updateById(restoreUserFile);
                 }
-            } else if (restoreUserFile.isFile()) {
+            }
+            else if (restoreUserFile.isFile()) {
                 restoreUserFile.setFileName(fileName);
                 userFileMapper.updateById(restoreUserFile);
             }

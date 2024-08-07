@@ -7,8 +7,8 @@
 <mapper namespace="com.qiwenshare.file.mapper.UserMapper">
 
     <insert id="insertUser" parameterType="com.qiwenshare.file.domain.user.UserBean" useGeneratedKeys="true" keyProperty="userId">
-        INSERT INTO user (userId, username, salt, PASSWORD,  telephone, sex, imageUrl, registerTime, available)
-        VALUES (#{userId}, #{username},#{salt}, #{password}, #{telephone}, #{sex}, #{imageUrl}, #{registerTime}, 1);
+        INSERT INTO user (userId, username, salt, PASSWORD, telephone, sex, imageUrl, registerTime, available)
+        VALUES (#{userId}, #{username}, #{salt}, #{password}, #{telephone}, #{sex}, #{imageUrl}, #{registerTime}, 1);
     </insert>
 
     <insert id="insertUserRole">
@@ -19,7 +19,7 @@
     <select id="selectRoleListByUserId" resultType="com.qiwenshare.file.domain.user.Role">
         select b.*
         from user_role a
-        left join role b on b.roleId = a.roleId
+                 left join role b on b.roleId = a.roleId
         where userId = #{userId}
     </select>
 
@@ -34,7 +34,7 @@
         select userId
         from user
         where telephone = #{telephone}
-        AND password = #{password}
+          AND password = #{password}
     </select>
 
 </mapper>

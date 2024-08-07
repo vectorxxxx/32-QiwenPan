@@ -27,8 +27,7 @@
 
 ## 开源说明
 
-系统 100%开源
-本软件遵循 MIT 开源协议
+系统 100%开源 本软件遵循 MIT 开源协议
 
 **您可以在其基础上继续进行开发来完善其功能，成为本项目的贡献者之一**
 
@@ -43,30 +42,26 @@
 
 ### 基本文件操作
 
-| 操作   | 文件 | 文件夹 | 单个 | 批量 | 备注                                                                                                     |
-| :----- | :--: | :----: | :--: | :--: | -------------------------------------------------------------------------------------------------------- |
-| 创建   |  √   |   √    |  √   |  ⚪  | 创建 Word、Excel、PowerPoint 在线文件                                                                    |
-| 删除   |  √   |   √    |  √   |  √   |                                                                                                          |
-| 上传   |  √   |   √    |  √   |  √   | **拖拽**上传、**粘贴截图**上传                                                                           |
-| 重命名 |  √   |   √    |  √   |  ⚪  |                                                                                                          |
-| 移动   |  √   |   √    |  √   |  √   |                                                                                                          |
-| 复制   |  √   |   ⚪   |  √   |  ⚪  |                                                                                                          |
-| 解压缩 |  √   |   ⚪   |  √   |  ⚪  | **ZIP、RAR**                                                                                             |
-| 预览   |  √   |   ⚪   |  √   |  ⚪  | 支持图片、视频、音频在线预览<br />支持 PDF、JSON、TXT、HTML 等常用文本文件<br />支持 Office 文件在线预览 |
-| 分享   |  √   |   √    |  √   |  √   | 支持有效期、提取码                                                                                       |
-| 搜索   |  √   |   √    |  ⚪  |  ⚪  | 支持 ElasticSearch 文件名称模糊搜索                                                                      |
+| 操作 | 文件 | 文件夹 | 单个 | 批量 | 备注 | | :----- | :--: | :----: | :--: | :--: | -------------------------------------------------------------------------------------------------------- |
+| 创建 | √ | √ | √ | ⚪ | 创建 Word、Excel、PowerPoint 在线文件 | | 删除 | √ | √ | √ | √ | | | 上传 | √ | √ | √ | √ | **拖拽**上传、**粘贴截图**上传 | | 重命名 | √ | √ | √ | ⚪ | | | 移动 | √ | √ | √ | √ | | | 复制
+| √ | ⚪ | √ | ⚪ | | | 解压缩 | √ | ⚪ | √ | ⚪ | **ZIP、RAR**                                                                                             | | 预览 | √ | ⚪ | √ | ⚪ |
+支持图片、视频、音频在线预览<br />支持 PDF、JSON、TXT、HTML 等常用文本文件<br />支持 Office 文件在线预览 | | 分享 | √ | √ | √ | √ | 支持有效期、提取码 | | 搜索 | √ | √ | ⚪ | ⚪ | 支持 ElasticSearch 文件名称模糊搜索 |
 
 ### 特色功能
 
 | 功能              | 描述                                                                                                                                                                                                                                                                                                                                                      |
 | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| office 在线编辑   | Word、Excel、PowerPoint 文档的在线创建、**在线编辑**、协同编辑功能<br />集成 [OnlyOffice](https://api.onlyoffice.com/)，安装方式参考 [安装 ONLYOFFICE](https://www.qiwenshare.com/essay/detail/1208)                                                                                                                                                      |
-| markdown 在线编辑 | 支持 **markdown** 文件在线预览、编辑、保存功能<br />集成 [mavon-editor](https://www.npmjs.com/package/mavon-editor) ，已内置到前端工程中                                                                                                                                                                                                                  |
-| 代码在线编辑      | 支持 **C、C++、C#、Java、JavaScript、HTML、CSS、Less、Sass、Stylus** <br />等常用代码类文件的在线预览、编辑、保存<br />集成 [vue-codemirror](https://github.com/surmon-china/vue-codemirror)，已内置到前端工程中，<br />可参考 [codemirror](https://codemirror.net/index.html) 官网说明添加更多语言                                                       |
+| office 在线编辑   | Word、Excel、PowerPoint 文档的在线创建、**
+在线编辑**、协同编辑功能<br />集成 [OnlyOffice](https://api.onlyoffice.com/)，安装方式参考 [安装 ONLYOFFICE](https://www.qiwenshare.com/essay/detail/1208)                                                                                                                                                      |
+| markdown 在线编辑 | 支持 **
+markdown** 文件在线预览、编辑、保存功能<br />集成 [mavon-editor](https://www.npmjs.com/package/mavon-editor) ，已内置到前端工程中                                                                                                                                                                                                                  |
+| 代码在线编辑      | 支持 **
+C、C++、C#、Java、JavaScript、HTML、CSS、Less、Sass、Stylus** <br />等常用代码类文件的在线预览、编辑、保存<br />集成 [vue-codemirror](https://github.com/surmon-china/vue-codemirror)，已内置到前端工程中，<br />可参考 [codemirror](https://codemirror.net/index.html) 官网说明添加更多语言                                                       |
 | 文件分类查看      | 图片、视频、音乐、文档、其他，分类查看更快捷                                                                                                                                                                                                                                                                                                              |
 | 多种查看模式      | 支持网格模式、列表模式、时间线模式<br />网格模式下图标支持手动控制显示大小                                                                                                                                                                                                                                                                                |
 | 回收站            | 删除文件自动移入回收站，支持在回收站中彻底删除、还原文件                                                                                                                                                                                                                                                                                                  |
-| 多种存储方式      | 基于奇文社区自研框架 [UFOP](https://gitee.com/qiwen-cloud/ufop-spring-boot-starter)，实现文件多样化存储。<br/>支持**本地**磁盘、**阿里云 OSS** 对象存储、**FastDFS** 存储、**MinIO** 存储、<br />**七牛云 KODO** 对象存储，点击查看配置方式[存储方式配置](https://pan.qiwenshare.com/docs/config/#%E5%AD%98%E5%82%A8%E6%96%B9%E5%BC%8F%E9%85%8D%E7%BD%AE) |
+| 多种存储方式      | 基于奇文社区自研框架 [UFOP](https://gitee.com/qiwen-cloud/ufop-spring-boot-starter)，实现文件多样化存储。<br/>支持**本地**磁盘、**阿里云 OSS** 对象存储、**FastDFS** 存储、**MinIO** 存储、<br />**七牛云
+KODO** 对象存储，点击查看配置方式[存储方式配置](https://pan.qiwenshare.com/docs/config/#%E5%AD%98%E5%82%A8%E6%96%B9%E5%BC%8F%E9%85%8D%E7%BD%AE) |
 | 支持分片上传      | 基于奇文社区自研框架 [UFOP](https://gitee.com/qiwen-cloud/ufop-spring-boot-starter), 实现文件分片上传。<br />集成优秀开源项目 [vue-simple-uploader](https://github.com/simple-uploader/vue-uploader/blob/master/README_zh-CN.md)                                                                                                                          |
 | 支持极速秒传      | 计算文件 MD5，实现极速秒传效果，提高上传效率                                                                                                                                                                                                                                                                                                              |
 | 支持断点续传      | 同一个文件，当上传过程中网络中断，可以从断点处继续上传                                                                                                                                                                                                                                                                                                    |
@@ -74,13 +69,16 @@
 | 存储容量显示      | 可实时显示文件存储占用情况及总存储容量                                                                                                                                                                                                                                                                                                                    |
 
 ## 源码地址
+
 ### 前后台项目代码
+
 | 项目名称     | 源码地址                                                                                     |
 | ------------ | -------------------------------------------------------------------------------------------- |
 | 奇文网盘前端 | [https://gitee.com/qiwen-cloud/qiwen-file-web](https://gitee.com/qiwen-cloud/qiwen-file-web) |
 | 奇文网盘后台 | [https://gitee.com/qiwen-cloud/qiwen-file](https://gitee.com/qiwen-cloud/qiwen-file)         |
 
 ### 后台项目依赖
+
 | 项目名称     | 源码地址                                                                                     |
 | ------------ | -------------------------------------------------------------------------------------------- |
 | 奇文社区统一依赖管理（父pom） | [https://gitee.com/qiwen-cloud/qiwenshare](https://gitee.com/qiwen-cloud/qiwenshare)         |
@@ -120,10 +118,10 @@
 #### 1.1 页面布局
 
 - 左侧分类栏区域：展示文件类型，分为我的文件、回收站和我的分享三大类，切换分类可以查看文件，底部显示已占用存储空间。
-  1. 点击左侧分类栏中的**全部**，右侧文件列表会随面包屑导航栏中的当前位置变化而变化，调用后台接口，传参当前位置 & 分页数据，获取当前路径下 & 当前页的文件列表。
-  2. 点击左侧分类栏中的**图片、文档、视频、音乐、其他**，面包屑导航栏将显示当前文件类型，右侧文件列表会随左侧分类栏的切换而变化，调用后台接口，传参当前点击的文件类型 & 分页数据，获取当前文件类型 & 当前页的文件列表。
-  3. 点击左侧分类栏中的**回收站**，右侧文件列表显示回收站中的文件。
-  4. 点击左侧分类栏中的**我的分享**，右侧文件列表显示个人分享过的文件。
+    1. 点击左侧分类栏中的**全部**，右侧文件列表会随面包屑导航栏中的当前位置变化而变化，调用后台接口，传参当前位置 & 分页数据，获取当前路径下 & 当前页的文件列表。
+    2. 点击左侧分类栏中的**图片、文档、视频、音乐、其他**，面包屑导航栏将显示当前文件类型，右侧文件列表会随左侧分类栏的切换而变化，调用后台接口，传参当前点击的文件类型 & 分页数据，获取当前文件类型 & 当前页的文件列表。
+    3. 点击左侧分类栏中的**回收站**，右侧文件列表显示回收站中的文件。
+    4. 点击左侧分类栏中的**我的分享**，右侧文件列表显示个人分享过的文件。
 - 顶部文件操作区域：包括对文件的操作按钮组、文件查看模式切换按钮组、设置文件显示列按钮
 - 中间面包屑导航栏：标识当前位于的目录。点击层级，可以回到任意一层目录；**点击面包屑导航栏后面的空白处，可以手动输入路径以便快速进入指定目录**。
 - 右侧文件展示区域：展示形式会随文件查看模式而改变；底部分页组件。
@@ -265,8 +263,8 @@
 
 #### 8.1 office 在线预览 & 编辑
 
-本地启动时，office 文件在线预览需要在本地搭建 [only office](https://www.qiwenshare.com/essay/detail/1208) 服务；
-线上部署时，office 文件在线预览需要在服务器上搭建 [only office](https://www.qiwenshare.com/essay/detail/1208) 服务；
+本地启动时，office 文件在线预览需要在本地搭建 [only office](https://www.qiwenshare.com/essay/detail/1208) 服务； 线上部署时，office 文件在线预览需要在服务器上搭建 [only office](https://www.qiwenshare.com/essay/detail/1208)
+服务；
 
 例如：word 文件在线预览：
 <img src="https://pan.qiwenshare.com/docs/img/guide/function/preview.png" alt="文件在线预览">
@@ -322,21 +320,22 @@ MP3 格式的文件支持在线播放。
 
 此项目的开发离不开其他优秀开源项目的支持，在此感谢以下开源项目：
 
-- [vue-simple-uploader](https://github.com/simple-uploader/vue-uploader/blob/master/README_zh-CN.md)：一款基于 [simple-uploader.js](https://github.com/simple-uploader/Uploader/blob/develop/README_zh-CN.md) 开发的适用于 Vue.js 的分片上传插件
+- [vue-simple-uploader](https://github.com/simple-uploader/vue-uploader/blob/master/README_zh-CN.md)：一款基于 [simple-uploader.js](https://github.com/simple-uploader/Uploader/blob/develop/README_zh-CN.md)
+  开发的适用于 Vue.js 的分片上传插件
 - [vue-video-player](https://github.com/surmon-china/vue-video-player)：一款基于 [video.js](https://docs.videojs.com/) 开发的视频播放组件
 
 ## 参与贡献
 
-1.  Fork 本仓库
-2.  新建 Feat_xxx 分支
-3.  提交代码
-4.  新建 Pull Request
+1. Fork 本仓库
+2. 新建 Feat_xxx 分支
+3. 提交代码
+4. 新建 Pull Request
 
 ## 码云特技
 
-1.  使用 Readme_XXX.md 来支持不同的语言，例如 Readme_en.md, Readme_zh.md
-2.  码云官方博客 [blog.gitee.com](https://blog.gitee.com)
-3.  你可以 [https://gitee.com/explore](https://gitee.com/explore) 这个地址来了解码云上的优秀开源项目
-4.  [GVP](https://gitee.com/gvp) 全称是码云最有价值开源项目，是码云综合评定出的优秀开源项目
-5.  码云官方提供的使用手册 [https://gitee.com/help](https://gitee.com/help)
-6.  码云封面人物是一档用来展示码云会员风采的栏目 [https://gitee.com/gitee-stars/](https://gitee.com/gitee-stars/)
+1. 使用 Readme_XXX.md 来支持不同的语言，例如 Readme_en.md, Readme_zh.md
+2. 码云官方博客 [blog.gitee.com](https://blog.gitee.com)
+3. 你可以 [https://gitee.com/explore](https://gitee.com/explore) 这个地址来了解码云上的优秀开源项目
+4. [GVP](https://gitee.com/gvp) 全称是码云最有价值开源项目，是码云综合评定出的优秀开源项目
+5. 码云官方提供的使用手册 [https://gitee.com/help](https://gitee.com/help)
+6. 码云封面人物是一档用来展示码云会员风采的栏目 [https://gitee.com/gitee-stars/](https://gitee.com/gitee-stars/)

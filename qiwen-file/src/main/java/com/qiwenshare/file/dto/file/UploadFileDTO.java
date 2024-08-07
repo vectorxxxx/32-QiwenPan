@@ -1,17 +1,13 @@
 package com.qiwenshare.file.dto.file;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
-import javax.persistence.*;
-
 @Data
-@Schema(name = "上传文件DTO",required = true)
-public class UploadFileDTO {
+@Schema(name = "上传文件DTO",
+        required = true)
+public class UploadFileDTO
+{
 
     @Schema(description = "文件路径")
     private String filePath;

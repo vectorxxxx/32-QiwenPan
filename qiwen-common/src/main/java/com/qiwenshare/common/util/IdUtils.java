@@ -1,7 +1,7 @@
 package com.qiwenshare.common.util;
 
 /**
- * @author MAC
+ * @author VectorX
  * @version 1.0
  */
 public class IdUtils

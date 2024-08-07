@@ -7,7 +7,8 @@ import java.lang.reflect.Method;
 import java.util.Arrays;
 
 @Slf4j
-public class BaseAsyncUncaughtExceptionHandler implements AsyncUncaughtExceptionHandler {
+public class BaseAsyncUncaughtExceptionHandler implements AsyncUncaughtExceptionHandler
+{
     @Override
     public void handleUncaughtException(Throwable throwable, Method method, Object... objects) {
         log.error("捕获线程异常method[{}] params{}", method, Arrays.toString(objects));

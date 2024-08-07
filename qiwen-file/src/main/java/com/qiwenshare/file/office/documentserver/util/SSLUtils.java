@@ -2,37 +2,47 @@ package com.qiwenshare.file.office.documentserver.util;
 
 import org.springframework.stereotype.Component;
 
-import javax.net.ssl.*;
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
+
 /**
- * Disables and enables certificate and host-name checking in
- * HttpsURLConnection, the default JVM implementation of the HTTPS/TLS protocol.
- * Has no effect on implementations such as Apache Http Client, Ok Http.
-*/
+ * Disables and enables certificate and host-name checking in HttpsURLConnection, the default JVM implementation of the HTTPS/TLS protocol. Has no effect on implementations such as
+ * Apache Http Client, Ok Http.
+ */
 @Component
-public final class SSLUtils {
+public final class SSLUtils
+{
 
     private final HostnameVerifier jvmHostnameVerifier = HttpsURLConnection.getDefaultHostnameVerifier();
 
-    private final HostnameVerifier trivialHostnameVerifier = new HostnameVerifier() {
+    private final HostnameVerifier trivialHostnameVerifier = new HostnameVerifier()
+    {
         public boolean verify(String hostname, SSLSession sslSession) {
             return true;
         }
     };
 
-    private final TrustManager[] UNQUESTIONING_TRUST_MANAGER = new TrustManager[] { new X509TrustManager() {
-        public X509Certificate[] getAcceptedIssuers() {
-            return null;
-        }
+    private final TrustManager[] UNQUESTIONING_TRUST_MANAGER = new TrustManager[] {
+            new X509TrustManager()
+            {
+                public X509Certificate[] getAcceptedIssuers() {
+                    return null;
+                }
 
-        public void checkClientTrusted(X509Certificate[] certs, String authType) {
-        }
+                public void checkClientTrusted(X509Certificate[] certs, String authType) {
+                }
 
-        public void checkServerTrusted(X509Certificate[] certs, String authType) {
-        }
-    } };
+                public void checkServerTrusted(X509Certificate[] certs, String authType) {
+                }
+            }
+    };
 
     public void turnOffSslChecking() throws NoSuchAlgorithmException, KeyManagementException {
         HttpsURLConnection.setDefaultHostnameVerifier(trivialHostnameVerifier);
