@@ -46,6 +46,7 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 @Tag(name = "share",
@@ -289,7 +290,7 @@ public class ShareController
         LambdaQueryWrapper<Share> lambdaQueryWrapper = new LambdaQueryWrapper<>();
         lambdaQueryWrapper.eq(Share::getShareBatchNum, checkEndTimeDTO.getShareBatchNum());
         Share share = shareService.getOne(lambdaQueryWrapper);
-        if (share == null) {
+        if (Objects.isNull(share)) {
             return RestResult
                     .<String>fail()
                     .message("文件不存在！");

@@ -165,7 +165,7 @@ public class UserController
     public RestResult<Boolean> checkWxAuth() {
         // 获取用户 Session 信息
         JwtUser sessionUserBean = SessionUtil.getSession();
-        if (sessionUserBean == null || "anonymousUser".equals(sessionUserBean.getUsername())) {
+        if (Objects.isNull(sessionUserBean) || "anonymousUser".equals(sessionUserBean.getUsername())) {
             return RestResult
                     .<Boolean>fail()
                     .message("用户暂未登录");

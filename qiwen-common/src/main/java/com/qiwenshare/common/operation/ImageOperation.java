@@ -6,6 +6,7 @@ import net.coobird.thumbnailator.geometry.Positions;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.ArrayUtils;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -15,6 +16,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Objects;
 
 @Slf4j
 public class ImageOperation
@@ -81,7 +83,7 @@ public class ImageOperation
         InputStream inputStream1 = new ByteArrayInputStream(baos.toByteArray());
         InputStream inputStream2 = new ByteArrayInputStream(baos.toByteArray());
         BufferedImage bufferedImage = ImageIO.read(inputStream1);
-        if (bufferedImage == null) {
+        if (Objects.isNull(bufferedImage)) {
             return inputStream2;
         }
         int oriHeight = bufferedImage.getHeight();
@@ -121,7 +123,7 @@ public class ImageOperation
     public static InputStream thumbnailsImageForScale(InputStream inputStream, File outFile, long desFileSize) throws IOException {
 
         byte[] imageBytes = IOUtils.toByteArray(inputStream);
-        if (imageBytes == null || imageBytes.length <= 0 || imageBytes.length < desFileSize * 1024) {
+        if (ArrayUtils.isEmpty(imageBytes) || imageBytes.length < desFileSize * 1024) {
             FileUtils.writeByteArrayToFile(outFile, imageBytes);
             return new FileInputStream(outFile);
         }

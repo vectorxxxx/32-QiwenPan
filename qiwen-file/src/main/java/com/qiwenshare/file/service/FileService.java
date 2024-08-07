@@ -37,6 +37,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
@@ -149,7 +150,7 @@ public class FileService extends ServiceImpl<FileMapper, FileBean> implements IF
         Image image = imageMapper.selectOne(new QueryWrapper<Image>().eq("fileId", userFile.getFileId()));
 
         if ("mp3".equalsIgnoreCase(userFile.getExtendName()) || "flac".equalsIgnoreCase(userFile.getExtendName())) {
-            if (music == null) {
+            if (Objects.isNull(music)) {
                 fileDealComp.parseMusicFile(userFile.getExtendName(), fileBean.getStorageType(), fileBean.getFileUrl(), fileBean.getFileId());
                 music = musicMapper.selectOne(new QueryWrapper<Music>().eq("fileId", userFile.getFileId()));
             }

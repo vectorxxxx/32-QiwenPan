@@ -12,6 +12,7 @@ import org.springframework.security.web.FilterInvocation;
 import org.springframework.stereotype.Component;
 
 import java.util.Collection;
+import java.util.Objects;
 
 /**
  * 根据用户信息和权限去与当前访问的url需要的权限进行对比
@@ -39,7 +40,7 @@ public class UrlAccessDecisionManager implements AccessDecisionManager
                         .getContext()
                         .getAuthentication()
                         .getPrincipal();
-                if (principal == null) {
+                if (Objects.isNull(principal)) {
                     throw new AccessDeniedException("expire");
                 }
 

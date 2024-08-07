@@ -1,6 +1,7 @@
 package com.qiwenshare.common.util;
 
 import net.coobird.thumbnailator.Thumbnails;
+import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,7 +25,7 @@ public class ImgUtil
      * @return 压缩质量后的图片字节数组
      */
     public static byte[] compressPicForScale(byte[] imageBytes, long desFileSize, String imageId) {
-        if (imageBytes == null || imageBytes.length <= 0 || imageBytes.length < desFileSize * 1024) {
+        if (ArrayUtils.isEmpty(imageBytes) || imageBytes.length < desFileSize * 1024) {
             return imageBytes;
         }
         long srcSize = imageBytes.length;

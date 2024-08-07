@@ -22,6 +22,7 @@ import com.qiwenshare.file.office.documentserver.util.service.ServiceConverter;
 import com.qiwenshare.file.office.dto.Action;
 import com.qiwenshare.file.office.dto.Track;
 import lombok.SneakyThrows;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Primary;
@@ -37,6 +38,7 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 //TODO: Refactoring
 @Component
@@ -68,10 +70,10 @@ public class DefaultCallbackManager implements CallbackManager
 
     // save file information from the URL to the file specified
     private void downloadToFile(String url, Path path) throws Exception {
-        if (url == null || url.isEmpty()) {
+        if (StringUtils.isEmpty(url)) {
             throw new RuntimeException("Url argument is not specified");  // URL isn't specified
         }
-        if (path == null) {
+        if (Objects.isNull(path)) {
             throw new RuntimeException("Path argument is not specified");  // file isn't specified
         }
 
@@ -79,7 +81,7 @@ public class DefaultCallbackManager implements CallbackManager
         java.net.HttpURLConnection connection = (java.net.HttpURLConnection) uri.openConnection();
         InputStream stream = connection.getInputStream();  // get input stream of the file information from the URL
 
-        if (stream == null) {
+        if (Objects.isNull(stream)) {
             connection.disconnect();
             throw new RuntimeException("Input stream is null");
         }
@@ -87,6 +89,7 @@ public class DefaultCallbackManager implements CallbackManager
         storageMutator.createOrUpdateFile(path, stream);  // update a file or create a new one
     }
 
+    @Override
     @SneakyThrows
     public void processSave(Track body, String fileName) {  // file saving process
         String downloadUri = body.getUrl();
@@ -155,11 +158,11 @@ public class DefaultCallbackManager implements CallbackManager
                     .getServerVersion());  // put the server version to the json object
             //            String history = objectMapper.writeValueAsString(jsonChanges);
             String history = JSON.toJSONString(jsonChanges);
-            if (history == null && body.getHistory() != null) {
+            if (StringUtils.isEmpty(history) && Objects.nonNull(body.getHistory())) {
                 history = JSON.toJSONString(body.getHistory());
             }
 
-            if (history != null && !history.isEmpty()) {
+            if (StringUtils.isNotEmpty(history)) {
                 storageMutator.writeToFile(versionDir + File.separator + "changes.json", history);  // write the history changes to the changes.json file
             }
 
@@ -169,6 +172,7 @@ public class DefaultCallbackManager implements CallbackManager
     }
 
     //TODO: Replace (String method) with (Enum method)
+    @Override
     @SneakyThrows
     public void commandRequest(String method, String key, HashMap meta) {  // create a command request
         String DocumentCommandUrl = docserviceUrlSite + docserviceUrlCommand;
@@ -213,7 +217,7 @@ public class DefaultCallbackManager implements CallbackManager
 
         InputStream stream = connection.getInputStream();  // get input stream
 
-        if (stream == null) {
+        if (Objects.isNull(stream)) {
             throw new RuntimeException("Could not get an answer");
         }
 
@@ -236,6 +240,7 @@ public class DefaultCallbackManager implements CallbackManager
         }
     }
 
+    @Override
     @SneakyThrows
     public void processForceSave(Track body, String fileName) {  // file force saving process
 

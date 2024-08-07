@@ -13,6 +13,8 @@ package com.qiwenshare.file.office.services;
 
 import com.qiwenshare.file.office.entities.Group;
 import com.qiwenshare.file.office.repositories.GroupRepository;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.List;
 import java.util.Optional;
@@ -27,7 +29,7 @@ public class GroupServices
 
     // create a new group with the specified name
     public Group createGroup(String name) {
-        if (name == null) {
+        if (StringUtils.isEmpty(name)) {
             return null;  // check if a name is specified
         }
         Optional<Group> group = groupRepository.findGroupByName(name);  // check if group with such a name already exists
@@ -44,7 +46,7 @@ public class GroupServices
 
     // create a list of groups from the reviewGroups permission parameter
     public List<Group> createGroups(List<String> reviewGroups) {
-        if (reviewGroups == null) {
+        if (CollectionUtils.isEmpty(reviewGroups)) {
             return null;  // check if the reviewGroups permission exists
         }
         return reviewGroups.stream()  // convert this parameter to a list of groups whose changes the user can accept/reject

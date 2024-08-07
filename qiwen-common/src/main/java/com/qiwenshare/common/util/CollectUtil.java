@@ -1,6 +1,7 @@
 package com.qiwenshare.common.util;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import java.net.InetAddress;
@@ -23,13 +24,13 @@ public class CollectUtil
      */
     public String getClientIpAddress(HttpServletRequest request) {
         String clientIp = request.getHeader("x-forwarded-for");
-        if (clientIp == null || clientIp.length() == 0 || "unknown".equalsIgnoreCase(clientIp)) {
+        if (StringUtils.isEmpty(clientIp) || "unknown".equalsIgnoreCase(clientIp)) {
             clientIp = request.getHeader("Proxy-Client-IP");
         }
-        if (clientIp == null || clientIp.length() == 0 || "unknown".equalsIgnoreCase(clientIp)) {
+        if (StringUtils.isEmpty(clientIp) || "unknown".equalsIgnoreCase(clientIp)) {
             clientIp = request.getHeader("WL-Proxy-Client-IP");
         }
-        if (clientIp == null || clientIp.length() == 0 || "unknown".equalsIgnoreCase(clientIp)) {
+        if (StringUtils.isEmpty(clientIp) || "unknown".equalsIgnoreCase(clientIp)) {
             clientIp = request.getRemoteAddr();
         }
         return clientIp;

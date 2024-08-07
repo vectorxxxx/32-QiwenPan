@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.Future;
 
@@ -110,7 +111,7 @@ public class AsyncTaskComp
 
     public Future<String> checkESUserFileId(String userFileId) {
         UserFile userFile = userFileMapper.selectById(userFileId);
-        if (userFile == null) {
+        if (Objects.isNull(userFile)) {
             fileDealComp.deleteESByUserFileId(userFileId);
         }
         return new AsyncResult<>("checkUserFileId");

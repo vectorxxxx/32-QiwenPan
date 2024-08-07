@@ -26,6 +26,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 
 @Component
 public class DefaultJwtManager implements JwtManager
@@ -38,6 +39,7 @@ public class DefaultJwtManager implements JwtManager
     //    private JSONParser parser;
 
     // create document token
+    @Override
     public String createToken(Map<String, Object> payloadClaims) {
         try {
             // build a HMAC signer using a SHA-256 hash
@@ -56,11 +58,13 @@ public class DefaultJwtManager implements JwtManager
     }
 
     // check if the token is enabled
+    @Override
     public boolean tokenEnabled() {
         return tokenSecret != null && !tokenSecret.isEmpty();
     }
 
     // read document token
+    @Override
     public JWT readToken(String token) {
         try {
             // build a HMAC verifier using the token secret
@@ -75,6 +79,7 @@ public class DefaultJwtManager implements JwtManager
     }
 
     // parse the body
+    @Override
     public JSONObject parseBody(String payload, String header) {
         JSONObject body;
         try {
@@ -85,19 +90,19 @@ public class DefaultJwtManager implements JwtManager
         }
         if (tokenEnabled()) {  // check if the token is enabled
             String token = (String) body.get("token");  // get token from the body
-            if (token == null) {  // if token is empty
+            if (StringUtils.isEmpty(token)) {  // if token is empty
                 if (header != null && !StringUtils.isBlank(header)) {  // and the header is defined
                     token = header.startsWith("Bearer ") ?
                             header.substring(7) :
                             header;  // get token from the header (it is placed after the Bearer prefix if it exists)
                 }
             }
-            if (token == null || StringUtils.isBlank(token)) {
+            if (StringUtils.isBlank(token)) {
                 throw new RuntimeException("{\"error\":1,\"message\":\"JWT expected\"}");
             }
 
             JWT jwt = readToken(token);  // read token
-            if (jwt == null) {
+            if (Objects.isNull(jwt)) {
                 throw new RuntimeException("{\"error\":1,\"message\":\"JWT validation failed\"}");
             }
             LinkedHashMap<String, Object> claims = null;

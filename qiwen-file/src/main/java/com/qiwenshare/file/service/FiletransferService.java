@@ -43,6 +43,7 @@ import com.qiwenshare.ufop.operation.upload.domain.UploadFile;
 import com.qiwenshare.ufop.operation.upload.domain.UploadFileResult;
 import com.qiwenshare.ufop.util.UFOPUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
@@ -66,6 +67,7 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
@@ -153,7 +155,7 @@ public class FiletransferService implements IFiletransferService
                 LambdaQueryWrapper<UploadTask> lambdaQueryWrapper = new LambdaQueryWrapper<>();
                 lambdaQueryWrapper.eq(UploadTask::getIdentifier, uploadFileDTO.getIdentifier());
                 List<UploadTask> rslist = uploadTaskMapper.selectList(lambdaQueryWrapper);
-                if (rslist == null || rslist.isEmpty()) {
+                if (CollectionUtils.isEmpty(rslist)) {
                     UploadTask uploadTask = new UploadTask();
                     uploadTask.setIdentifier(uploadFileDTO.getIdentifier());
                     uploadTask.setUploadTime(DateUtil.getCurrentTime());
@@ -182,7 +184,7 @@ public class FiletransferService implements IFiletransferService
         uploadFile.setCurrentChunkSize(uploadFileDto.getCurrentChunkSize());
 
         Uploader uploader = ufopFactory.getUploader();
-        if (uploader == null) {
+        if (Objects.isNull(uploader)) {
             log.error("上传失败，请检查storageType是否配置正确");
             throw new UploadException("上传失败");
         }
@@ -309,7 +311,7 @@ public class FiletransferService implements IFiletransferService
     }
 
     private String formatChatset(String str) {
-        if (str == null) {
+        if (StringUtils.isEmpty(str)) {
             return "";
         }
         if (java.nio.charset.Charset
@@ -330,7 +332,7 @@ public class FiletransferService implements IFiletransferService
 
             FileBean fileBean = fileMapper.selectById(userFile.getFileId());
             Downloader downloader = ufopFactory.getDownloader(fileBean.getStorageType());
-            if (downloader == null) {
+            if (Objects.isNull(downloader)) {
                 log.error("下载失败，文件存储类型不支持下载，storageType:{}", fileBean.getStorageType());
                 throw new DownloadException("下载失败");
             }
@@ -379,7 +381,7 @@ public class FiletransferService implements IFiletransferService
                 if (userFile1.isFile()) {
                     FileBean fileBean = fileMapper.selectById(userFile1.getFileId());
                     Downloader downloader = ufopFactory.getDownloader(fileBean.getStorageType());
-                    if (downloader == null) {
+                    if (Objects.isNull(downloader)) {
                         log.error("下载失败，文件存储类型不支持下载，storageType:{}", fileBean.getStorageType());
                         throw new UploadException("下载失败");
                     }
@@ -469,7 +471,7 @@ public class FiletransferService implements IFiletransferService
         UserFile userFile = userFileMapper.selectById(previewDTO.getUserFileId());
         FileBean fileBean = fileMapper.selectById(userFile.getFileId());
         Previewer previewer = ufopFactory.getPreviewer(fileBean.getStorageType());
-        if (previewer == null) {
+        if (Objects.isNull(previewer)) {
             log.error("预览失败，文件存储类型不支持预览，storageType:{}", fileBean.getStorageType());
             throw new UploadException("预览失败");
         }
@@ -507,7 +509,7 @@ public class FiletransferService implements IFiletransferService
         pictureFile.setFileUrl(new String(bytesUrl));
         pictureFile = pictureFileMapper.selectOne(new QueryWrapper<>(pictureFile));
         Previewer previewer = ufopFactory.getPreviewer(pictureFile.getStorageType());
-        if (previewer == null) {
+        if (Objects.isNull(previewer)) {
             log.error("预览失败，文件存储类型不支持预览，storageType:{}", pictureFile.getStorageType());
             throw new UploadException("预览失败");
         }

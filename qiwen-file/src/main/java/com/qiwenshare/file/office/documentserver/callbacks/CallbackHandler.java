@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 @Service
 public class CallbackHandler
@@ -33,7 +34,7 @@ public class CallbackHandler
 
     public int handle(Track body, String fileName) {  // handle a callback
         Callback callback = callbackHandlers.get(body.getStatus());
-        if (callback == null) {
+        if (Objects.isNull(callback)) {
             logger.warn("Callback status " + body.getStatus() + " is not supported yet");
             return 0;
         }

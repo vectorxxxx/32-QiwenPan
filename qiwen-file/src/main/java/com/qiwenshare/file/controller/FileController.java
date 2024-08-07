@@ -1,6 +1,5 @@
 package com.qiwenshare.file.controller;
 
-import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.util.IdUtil;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
@@ -36,6 +35,7 @@ import com.qiwenshare.file.dto.file.SearchFileDTO;
 import com.qiwenshare.file.dto.file.UnzipFileDTO;
 import com.qiwenshare.file.dto.file.UpdateFileDTO;
 import com.qiwenshare.file.io.QiwenFile;
+import com.qiwenshare.file.util.BeanCopyUtils;
 import com.qiwenshare.file.util.QiwenFileUtil;
 import com.qiwenshare.file.util.TreeNode;
 import com.qiwenshare.file.vo.file.FileDetailVO;
@@ -229,13 +229,14 @@ public class FileController
            module = CURRENT_MODULE)
     @ResponseBody
     public RestResult<SearchFileVO> searchFile(SearchFileDTO searchFileDTO) {
-        JwtUser sessionUserBean = SessionUtil.getSession();
+        final String userId = SessionUtil.getUserId();
 
         int currentPage = (int) searchFileDTO.getCurrentPage() - 1;
         int pageCount = (int) (searchFileDTO.getPageCount() == 0 ?
                                10 :
                                searchFileDTO.getPageCount());
 
+        // 文件搜索
         SearchResponse<FileSearch> search = null;
         try {
             search = elasticsearchClient.search(s -> s
@@ -256,7 +257,7 @@ public class FileController
                                             .wildcard("*" + searchFileDTO.getFileName() + "*")))))
                             .must(_3 -> _3.term(_4 -> _4
                                     .field("userId")
-                                    .value(sessionUserBean.getUserId())))))
+                                    .value(userId)))))
                     .from(currentPage)
                     .size(pageCount)
                     .highlight(h -> h
@@ -267,16 +268,19 @@ public class FileController
                             .encoder(HighlighterEncoder.Html)), FileSearch.class);
         }
         catch (IOException e) {
-            e.printStackTrace();
+            log.error("文件搜索失败：{}", e.getMessage(), e);
         }
 
         List<SearchFileVO> searchFileVOList = new ArrayList<>();
-        for (Hit<FileSearch> hit : search
+        final List<Hit<FileSearch>> hits = Objects
+                .requireNonNull(search)
                 .hits()
-                .hits()) {
-            SearchFileVO searchFileVO = new SearchFileVO();
-            BeanUtil.copyProperties(hit.source(), searchFileVO);
-            searchFileVO.setHighLight(hit.highlight());
+                .hits();
+        for (Hit<FileSearch> hit : hits) {
+            SearchFileVO searchFileVO = BeanCopyUtils.copy(hit.source(), SearchFileVO.class);
+            Objects
+                    .requireNonNull(searchFileVO)
+                    .setHighLight(hit.highlight());
             searchFileVOList.add(searchFileVO);
             asyncTaskComp.checkESUserFileId(searchFileVO.getUserFileId());
         }

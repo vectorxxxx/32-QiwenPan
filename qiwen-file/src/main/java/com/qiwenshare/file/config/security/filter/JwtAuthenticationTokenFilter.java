@@ -8,6 +8,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
@@ -23,6 +24,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Jwt过滤器（第一个过滤器）：获取用户token，查询用户信息拼装到security中，以便后续filter使用
@@ -85,21 +87,18 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter
         }
         else {
             String userId = userService.getUserIdByToken(token);
-            if (userId == null) {
+            if (StringUtils.isEmpty(userId)) {
                 throw new NotLoginException("用户未登录");
             }
             // 验证
-            if (SecurityContextHolder
-                    .getContext()
-                    .getAuthentication() == null) {
-                UserDetails userDetails = userService.loadUserByUsername(String.valueOf(userId));
+            final SecurityContext context = SecurityContextHolder.getContext();
+            if (Objects.isNull(context.getAuthentication())) {
+                UserDetails userDetails = userService.loadUserByUsername(userId);
                 if (userDetails.isEnabled()) {
                     UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken = new UsernamePasswordAuthenticationToken(userDetails, null,
                             userDetails.getAuthorities());
                     usernamePasswordAuthenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                    SecurityContextHolder
-                            .getContext()
-                            .setAuthentication(usernamePasswordAuthenticationToken);
+                    context.setAuthentication(usernamePasswordAuthenticationToken);
                 }
             }
         }

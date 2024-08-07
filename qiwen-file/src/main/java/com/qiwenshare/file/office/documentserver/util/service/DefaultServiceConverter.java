@@ -109,21 +109,22 @@ public class DefaultServiceConverter implements ServiceConverter
     }
 
     // get the URL to the converted file
+    @Override
     public String getConvertedUri(String documentUri, String fromExtension, String toExtension, String documentRevisionId, String filePass, Boolean isAsync, String lang) {
         // check if the fromExtension parameter is defined; if not, get it from the document url
-        fromExtension = fromExtension == null || fromExtension.isEmpty() ?
+        fromExtension = StringUtils.isEmpty(fromExtension) ?
                         fileUtility.getFileExtension(documentUri) :
                         fromExtension;
 
         // check if the file name parameter is defined; if not, get random uuid for this file
         String title = fileUtility.getFileName(documentUri);
-        title = title == null || title.isEmpty() ?
+        title = StringUtils.isEmpty(title) ?
                 UUID
                         .randomUUID()
                         .toString() :
                 title;
 
-        documentRevisionId = documentRevisionId == null || documentRevisionId.isEmpty() ?
+        documentRevisionId = StringUtils.isEmpty(documentRevisionId) ?
                              documentUri :
                              documentRevisionId;
 
@@ -171,6 +172,7 @@ public class DefaultServiceConverter implements ServiceConverter
     }
 
     // generate document key
+    @Override
     public String generateRevisionId(String expectedKey) {
         if (expectedKey.length() > 20)  // if the expected key length is greater than 20
         {
@@ -259,6 +261,7 @@ public class DefaultServiceConverter implements ServiceConverter
                "";
     }
 
+    @Override
     @SneakyThrows
     public String convertStreamToString(InputStream stream)  // convert stream to string
     {

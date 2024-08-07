@@ -230,7 +230,7 @@ public class FileDealComp
 
         List<TreeNode> childrenTreeNodes = treeNode.getChildren();
         String currentNodeName = nodeNameQueue.peek();
-        if (currentNodeName == null) {
+        if (StringUtils.isEmpty(currentNodeName)) {
             return treeNode;
         }
 
@@ -363,7 +363,7 @@ public class FileDealComp
 
                 String userId = userService.getUserIdByToken(token);
                 log.debug(JSON.toJSONString("当前登录session用户id：" + userId));
-                if (userId == null) {
+                if (StringUtils.isEmpty(userId)) {
                     return false;
                 }
                 log.debug("文件所属用户id：" + userFile.getUserId());

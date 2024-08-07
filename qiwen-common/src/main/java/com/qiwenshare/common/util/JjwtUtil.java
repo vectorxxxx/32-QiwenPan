@@ -5,6 +5,7 @@ import io.jsonwebtoken.JwtBuilder;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
@@ -73,7 +74,7 @@ public class JjwtUtil
             builder.setExpiration(new Date(exp));
         }
         // 设置jwt接收者
-        if (audience == null || "".equals(audience)) {
+        if (StringUtils.isEmpty(audience)) {
             builder.setAudience("Tom");
         }
         else {

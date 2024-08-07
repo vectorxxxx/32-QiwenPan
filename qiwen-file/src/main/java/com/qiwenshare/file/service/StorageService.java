@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
+import java.util.Objects;
 
 @Slf4j
 @Service
@@ -26,13 +27,14 @@ public class StorageService extends ServiceImpl<StorageMapper, StorageBean> impl
     @Resource
     UserFileMapper userFileMapper;
 
+    @Override
     public Long getTotalStorageSize(String userId) {
         LambdaQueryWrapper<StorageBean> lambdaQueryWrapper = new LambdaQueryWrapper<>();
         lambdaQueryWrapper.eq(StorageBean::getUserId, userId);
 
         StorageBean storageBean = storageMapper.selectOne(lambdaQueryWrapper);
         Long totalStorageSize = null;
-        if (storageBean == null || storageBean.getTotalStorageSize() == null) {
+        if (Objects.isNull(storageBean) || Objects.isNull(storageBean.getTotalStorageSize())) {
             LambdaQueryWrapper<SysParam> lambdaQueryWrapper1 = new LambdaQueryWrapper<>();
             lambdaQueryWrapper1.eq(SysParam::getSysParamKey, "totalStorageSize");
             SysParam sysParam = sysParamMapper.selectOne(lambdaQueryWrapper1);
@@ -52,13 +54,14 @@ public class StorageService extends ServiceImpl<StorageMapper, StorageBean> impl
         return totalStorageSize;
     }
 
+    @Override
     public boolean checkStorage(String userId, Long fileSize) {
         LambdaQueryWrapper<StorageBean> lambdaQueryWrapper = new LambdaQueryWrapper<>();
         lambdaQueryWrapper.eq(StorageBean::getUserId, userId);
 
         StorageBean storageBean = storageMapper.selectOne(lambdaQueryWrapper);
         Long totalStorageSize = null;
-        if (storageBean == null || storageBean.getTotalStorageSize() == null) {
+        if (Objects.isNull(storageBean) || Objects.isNull(storageBean.getTotalStorageSize())) {
             LambdaQueryWrapper<SysParam> lambdaQueryWrapper1 = new LambdaQueryWrapper<>();
             lambdaQueryWrapper1.eq(SysParam::getSysParamKey, "totalStorageSize");
             SysParam sysParam = sysParamMapper.selectOne(lambdaQueryWrapper1);
@@ -77,7 +80,7 @@ public class StorageService extends ServiceImpl<StorageMapper, StorageBean> impl
         }
 
         Long storageSize = userFileMapper.selectStorageSizeByUserId(userId);
-        if (storageSize == null) {
+        if (Objects.isNull(storageSize)) {
             storageSize = 0L;
         }
         if (storageSize + fileSize > totalStorageSize) {

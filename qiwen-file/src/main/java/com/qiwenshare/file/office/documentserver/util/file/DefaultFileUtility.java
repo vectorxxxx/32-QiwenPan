@@ -12,6 +12,7 @@
 package com.qiwenshare.file.office.documentserver.util.file;
 
 import com.qiwenshare.file.office.documentserver.models.enums.DocumentType;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -53,6 +54,7 @@ public class DefaultFileUtility implements FileUtility
     private List<String> ExtsPresentation = Arrays.asList(".pps", ".ppsx", ".ppsm", ".ppt", ".pptx", ".pptm", ".pot", ".potx", ".potm", ".odp", ".fodp", ".otp");
 
     // get the document type
+    @Override
     public DocumentType getDocumentType(String fileName) {
         String ext = getFileExtension(fileName).toLowerCase();  // get file extension from its name
         // word type for document extensions
@@ -75,8 +77,9 @@ public class DefaultFileUtility implements FileUtility
     }
 
     // get file name from its URL
+    @Override
     public String getFileName(String url) {
-        if (url == null) {
+        if (StringUtils.isEmpty(url)) {
             return "";
         }
 
@@ -87,26 +90,29 @@ public class DefaultFileUtility implements FileUtility
     }
 
     // get file name without extension
+    @Override
     public String getFileNameWithoutExtension(String url) {
         String fileName = getFileName(url);
-        if (fileName == null) {
+        if (StringUtils.isEmpty(fileName)) {
             return null;
         }
-        String fileNameWithoutExt = fileName.substring(0, fileName.lastIndexOf('.'));
-        return fileNameWithoutExt;
+        return fileName.substring(0, fileName.lastIndexOf('.'));
     }
 
     // get file extension from URL
+    @Override
     public String getFileExtension(String url) {
         String fileName = getFileName(url);
-        if (fileName == null) {
+        if (StringUtils.isEmpty(fileName)) {
             return null;
         }
-        String fileExt = fileName.substring(fileName.lastIndexOf("."));
-        return fileExt.toLowerCase();
+        return fileName
+                .substring(fileName.lastIndexOf("."))
+                .toLowerCase();
     }
 
     // get an editor internal extension
+    @Override
     public String getInternalExtension(DocumentType type) {
         // .docx for word file type
         if (type.equals(DocumentType.word)) {
@@ -127,26 +133,31 @@ public class DefaultFileUtility implements FileUtility
         return ".docx";
     }
 
+    @Override
     public List<String> getFillExts() {
         return Arrays.asList(docserviceFillDocs.split("\\|"));
     }
 
     // get file extensions that can be viewed
+    @Override
     public List<String> getViewedExts() {
         return Arrays.asList(docserviceViewedDocs.split("\\|"));
     }
 
     // get file extensions that can be edited
+    @Override
     public List<String> getEditedExts() {
         return Arrays.asList(docserviceEditedDocs.split("\\|"));
     }
 
     // get file extensions that can be converted
+    @Override
     public List<String> getConvertExts() {
         return Arrays.asList(docserviceConvertDocs.split("\\|"));
     }
 
     // get all the supported file extensions
+    @Override
     public List<String> getFileExts() {
         List<String> res = new ArrayList<>();
 
@@ -159,6 +170,7 @@ public class DefaultFileUtility implements FileUtility
     }
 
     // generate the file path from file directory and name
+    @Override
     public Path generateFilepath(String directory, String fullFileName) {
         String fileName = getFileNameWithoutExtension(fullFileName);  // get file name without extension
         String fileExtension = getFileExtension(fullFileName);  // get file extension
@@ -174,6 +186,7 @@ public class DefaultFileUtility implements FileUtility
     }
 
     // get maximum file size
+    @Override
     public long getMaxFileSize() {
         long size = Long.parseLong(filesizeMax);
         return size > 0 ?

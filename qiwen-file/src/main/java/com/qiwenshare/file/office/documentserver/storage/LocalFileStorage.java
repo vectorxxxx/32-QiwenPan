@@ -76,9 +76,10 @@ public class LocalFileStorage implements FileStorageMutator, FileStoragePathBuil
     /*
         This Storage configuration method should be called whenever a new storage folder is required
      */
+    @Override
     public void configure(String address) {
         this.storageAddress = address;
-        if (this.storageAddress == null) {
+        if (StringUtils.isEmpty(this.storageAddress)) {
             try {
                 this.storageAddress = InetAddress
                         .getLocalHost()
@@ -93,6 +94,7 @@ public class LocalFileStorage implements FileStorageMutator, FileStoragePathBuil
     }
 
     // get the storage directory
+    @Override
     public String getStorageLocation() {
         String serverPath = System.getProperty("user.dir");  // get the path to the server
         String directory;  // create the storage directory
@@ -112,6 +114,7 @@ public class LocalFileStorage implements FileStorageMutator, FileStoragePathBuil
     }
 
     // get the directory of the specified file
+    @Override
     public String getFileLocation(String fileName) {
         if (fileName.contains(File.separator)) {
             return getStorageLocation() + fileName;
@@ -120,6 +123,7 @@ public class LocalFileStorage implements FileStorageMutator, FileStoragePathBuil
     }
 
     // create a new directory if it does not exist
+    @Override
     public void createDirectory(Path path) {
         if (Files.exists(path)) {
             return;
@@ -133,6 +137,7 @@ public class LocalFileStorage implements FileStorageMutator, FileStoragePathBuil
     }
 
     // create a new file if it does not exist
+    @Override
     public boolean createFile(Path path, InputStream stream) {
         if (Files.exists(path)) {
             return true;
@@ -157,6 +162,7 @@ public class LocalFileStorage implements FileStorageMutator, FileStoragePathBuil
     }
 
     // delete a file
+    @Override
     public boolean deleteFile(String fileName) {
         try {
             fileName = URLDecoder.decode(fileName, StandardCharsets.UTF_8.toString());  // decode a x-www-form-urlencoded string
@@ -186,6 +192,7 @@ public class LocalFileStorage implements FileStorageMutator, FileStoragePathBuil
     }
 
     // delete file history
+    @Override
     public boolean deleteFileHistory(String fileName) {
         try {
             fileName = URLDecoder.decode(fileName, StandardCharsets.UTF_8.toString());  // decode a x-www-form-urlencoded string
@@ -211,6 +218,7 @@ public class LocalFileStorage implements FileStorageMutator, FileStoragePathBuil
     }
 
     // update a file
+    @Override
     public String updateFile(String fileName, byte[] bytes) {
         Path path = fileUtility.generateFilepath(getStorageLocation(), fileName);  // generate the path to the specified file
         try {
@@ -226,6 +234,7 @@ public class LocalFileStorage implements FileStorageMutator, FileStoragePathBuil
     }
 
     // move a file to the specified destination
+    @Override
     public boolean moveFile(Path source, Path destination) {
         try {
             Files.move(source, destination, new StandardCopyOption[] {StandardCopyOption.REPLACE_EXISTING});
@@ -238,6 +247,7 @@ public class LocalFileStorage implements FileStorageMutator, FileStoragePathBuil
     }
 
     // write the payload to the file
+    @Override
     public boolean writeToFile(String pathName, String payload) {
         try (FileWriter fw = new FileWriter(pathName)) {
             fw.write(payload);
@@ -250,6 +260,7 @@ public class LocalFileStorage implements FileStorageMutator, FileStoragePathBuil
     }
 
     // get the path where all the forcely saved file versions are saved or create it
+    @Override
     public String getForcesavePath(String fileName, Boolean create) {
         String directory = getStorageLocation();
 
@@ -277,6 +288,7 @@ public class LocalFileStorage implements FileStorageMutator, FileStoragePathBuil
     }
 
     // load file as a resource
+    @Override
     public Resource loadFileAsResource(String fileName) {
         String fileLocation = getForcesavePath(fileName, false);  // get the path where all the forcely saved file versions are saved
         if (StringUtils.isBlank(fileLocation)) {  // if file location is empty
@@ -295,6 +307,7 @@ public class LocalFileStorage implements FileStorageMutator, FileStoragePathBuil
         return null;
     }
 
+    @Override
     public Resource loadFileAsResourceHistory(String fileName, String version, String file) {
 
         String fileLocation = getStorageLocation() + fileName + "-hist" + File.separator + version + File.separator + file;  // get it by the file name
@@ -313,11 +326,13 @@ public class LocalFileStorage implements FileStorageMutator, FileStoragePathBuil
     }
 
     // get a collection of all the stored files
+    @Override
     public File[] getStoredFiles() {
         File file = new File(getStorageLocation());
         return file.listFiles(pathname -> pathname.isFile());
     }
 
+    @Override
     @SneakyThrows
     public void createMeta(String fileName, String uid, String uname) {  // create the file meta information
         String histDir = getHistoryDir(getFileLocation(fileName));  // get the history directory
@@ -341,6 +356,7 @@ public class LocalFileStorage implements FileStorageMutator, FileStoragePathBuil
     }
 
     // create or update a file
+    @Override
     public boolean createOrUpdateFile(Path path, InputStream stream) {
         //        if (!Files.exists(path)){ // if the specified file does not exist
         //            return createFile(path, stream);  // create it in the specified directory
@@ -356,6 +372,7 @@ public class LocalFileStorage implements FileStorageMutator, FileStoragePathBuil
     }
 
     // get the server URL
+    @Override
     public String getServerUrl(Boolean forDocumentServer) {
         if (forDocumentServer && !docserviceUrlExample.equals("")) {
             return docserviceUrlExample;
@@ -367,11 +384,13 @@ public class LocalFileStorage implements FileStorageMutator, FileStoragePathBuil
     }
 
     // get the history directory
+    @Override
     public String getHistoryDir(String path) {
         return path + historyPostfix;
     }
 
     // get the file version
+    @Override
     public int getFileVersion(String historyPath, Boolean ifIndexPage) {
         Path path;
         if (ifIndexPage) {  // if the start page is opened

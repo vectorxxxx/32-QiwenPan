@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -46,7 +47,7 @@ public class FileOperation
      * @return 是否删除成功
      */
     public static boolean deleteFile(File file) {
-        if (file == null) {
+        if (Objects.isNull(file)) {
             return false;
         }
 
@@ -98,7 +99,7 @@ public class FileOperation
      * @return 文件大小
      */
     public static long getFileSize(File file) {
-        if (file == null) {
+        if (Objects.isNull(file)) {
             return 0;
         }
         return file.length();
@@ -111,7 +112,7 @@ public class FileOperation
      * @return 是否创建成功
      */
     public static boolean mkdir(File file) {
-        if (file == null) {
+        if (Objects.isNull(file)) {
             return false;
         }
 
@@ -129,7 +130,7 @@ public class FileOperation
      * @return 是否创建成功
      */
     public static boolean mkdir(String fileUrl) {
-        if (fileUrl == null) {
+        if (StringUtils.isEmpty(fileUrl)) {
             return false;
         }
         File file = newFile(fileUrl);
@@ -206,7 +207,7 @@ public class FileOperation
      * @throws IOException io异常
      */
     public static void copyFile(String srcUrl, String destUrl) throws IOException {
-        if (srcUrl == null || destUrl == null) {
+        if (StringUtils.isEmpty(srcUrl) || StringUtils.isEmpty(destUrl)) {
             return;
         }
         File srcFile = newFile(srcUrl);

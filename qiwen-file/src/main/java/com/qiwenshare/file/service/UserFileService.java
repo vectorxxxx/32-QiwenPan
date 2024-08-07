@@ -30,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.annotation.Resource;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -75,7 +76,7 @@ public class UserFileService extends ServiceImpl<UserFileMapper, UserFile> imple
         Page<FileListVO> page = new Page<>(currentPage, pageCount);
         UserFile userFile = new UserFile();
         JwtUser sessionUserBean = SessionUtil.getSession();
-        if (userId == null) {
+        if (Objects.isNull(userId)) {
             userFile.setUserId(sessionUserBean.getUserId());
         }
         else {
