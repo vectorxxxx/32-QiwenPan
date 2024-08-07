@@ -10,7 +10,7 @@ public class MimeUtils
         return map.get(suffix);
     }
 
-    private static Map<String, String> map = new HashMap<String, String>();
+    private static Map<String, String> map = new HashMap<>();
 
     static {
         map.put("323", "text/h323");

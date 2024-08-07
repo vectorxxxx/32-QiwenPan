@@ -6,13 +6,11 @@ import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.core.search.HighlighterEncoder;
 import co.elastic.clients.elasticsearch.core.search.Hit;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
-import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.qiwenshare.common.anno.MyLog;
 import com.qiwenshare.common.exception.QiwenException;
 import com.qiwenshare.common.result.RestResult;
 import com.qiwenshare.common.util.DateUtil;
-import com.qiwenshare.common.util.security.JwtUser;
 import com.qiwenshare.common.util.security.SessionUtil;
 import com.qiwenshare.file.api.IFileService;
 import com.qiwenshare.file.api.IUserFileService;
@@ -21,6 +19,7 @@ import com.qiwenshare.file.component.FileDealComp;
 import com.qiwenshare.file.config.es.FileSearch;
 import com.qiwenshare.file.constant.FileDeleteFlagEnum;
 import com.qiwenshare.file.constant.FileExtendTemplatePathEnum;
+import com.qiwenshare.file.constant.FileTypeEnum;
 import com.qiwenshare.file.domain.FileBean;
 import com.qiwenshare.file.domain.UserFile;
 import com.qiwenshare.file.dto.file.BatchDeleteFileDTO;
@@ -48,12 +47,12 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.jetty.util.StringUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.util.ClassUtils;
-import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -71,7 +70,6 @@ import java.net.URLDecoder;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
@@ -118,11 +116,10 @@ public class FileController
     public RestResult<Object> createFile(@Valid
                                          @RequestBody
                                                  CreateFileDTO createFileDTO) {
-
         try {
             final String userId = SessionUtil.getUserId();
             List<UserFile> userFiles = userFileService.selectSameUserFile(createFileDTO, userId);
-            if (!CollectionUtils.isEmpty(userFiles)) {
+            if (CollectionUtils.isNotEmpty(userFiles)) {
                 return RestResult
                         .fail()
                         .message("同名文件已存在");
@@ -301,35 +298,45 @@ public class FileController
     public RestResult<String> renameFile(
             @RequestBody
                     RenameFileDTO renameFileDto) {
+        final String userId = SessionUtil.getUserId();
 
-        JwtUser sessionUserBean = SessionUtil.getSession();
+        // 通过用户文件ID获取用户文件
         UserFile userFile = userFileService.getById(renameFileDto.getUserFileId());
 
-        List<UserFile> userFiles = userFileService.selectUserFileByNameAndPath(renameFileDto.getFileName(), userFile.getFilePath(), sessionUserBean.getUserId());
-        if (org.apache.commons.collections4.CollectionUtils.isNotEmpty(userFiles)) {
+        // 判断文件名是否重复
+        final String renameFileName = renameFileDto.getFileName();
+        List<UserFile> userFiles = userFileService.selectUserFileByNameAndPath(renameFileName, userFile.getFilePath(), userId);
+        if (CollectionUtils.isNotEmpty(userFiles)) {
             return RestResult
                     .<String>fail()
                     .message("同名文件已存在");
         }
 
-        LambdaUpdateWrapper<UserFile> lambdaUpdateWrapper = new LambdaUpdateWrapper<>();
-        lambdaUpdateWrapper
-                .set(UserFile::getFileName, renameFileDto.getFileName())
+        // 根据用户文件ID更新用户文件名称
+        userFileService.update(new LambdaUpdateWrapper<UserFile>()
+                .set(UserFile::getFileName, renameFileName)
                 .set(UserFile::getUploadTime, DateUtil.getCurrentTime())
-                .eq(UserFile::getUserFileId, renameFileDto.getUserFileId());
-        userFileService.update(lambdaUpdateWrapper);
-        if (1 == userFile.getIsDir()) {
-            List<UserFile> list = userFileService.selectUserFileByLikeRightFilePath(new QiwenFile(userFile.getFilePath(), userFile.getFileName(), true).getPath(),
-                    sessionUserBean.getUserId());
+                .eq(UserFile::getUserFileId, renameFileDto.getUserFileId()));
 
+        // 如果是文件夹
+        if (userFile.isDirectory()) {
+            final String fileName = userFile.getFileName();
+            final String filePath = userFile.getFilePath();
+            final String directoryPath = new QiwenFile(filePath, fileName, true).getPath();
+            final String renameDirectoryPath = new QiwenFile(filePath, renameFileName, true).getPath();
+
+            // 更新文件夹下的所有文件路径
+            List<UserFile> list = userFileService.selectUserFileByLikeRightFilePath(directoryPath, userId);
             for (UserFile newUserFile : list) {
-                String escapedPattern = Pattern.quote(new QiwenFile(userFile.getFilePath(), userFile.getFileName(), userFile.getIsDir() == 1).getPath());
+                String escapedPattern = Pattern.quote(directoryPath);
                 newUserFile.setFilePath(newUserFile
                         .getFilePath()
-                        .replaceFirst(escapedPattern, new QiwenFile(userFile.getFilePath(), renameFileDto.getFileName(), userFile.getIsDir() == 1).getPath()));
+                        .replaceFirst(escapedPattern, renameDirectoryPath));
                 userFileService.updateById(newUserFile);
             }
         }
+
+        // 更新 ES 索引
         fileDealComp.uploadESByUserFileId(renameFileDto.getUserFileId());
         return RestResult.success();
     }
@@ -353,16 +360,18 @@ public class FileController
             @Parameter(description = "页面数量",
                        required = true)
                     long pageCount) {
-        if ("0".equals(fileType)) {
+        // 全部文件类型
+        if (String
+                .valueOf(FileTypeEnum.TOTAL.getType())
+                .equals(fileType)) {
             IPage<FileListVO> fileList = userFileService.userFileList(null, filePath, currentPage, pageCount);
             return RestResult
                     .<FileListVO>success()
                     .dataList(fileList.getRecords(), fileList.getTotal());
         }
+        // 某个文件类型
         else {
-            IPage<FileListVO> fileList = userFileService.getFileByFileType(Integer.valueOf(fileType), currentPage, pageCount, SessionUtil
-                    .getSession()
-                    .getUserId());
+            IPage<FileListVO> fileList = userFileService.getFileByFileType(Integer.valueOf(fileType), currentPage, pageCount, SessionUtil.getUserId());
             return RestResult
                     .<FileListVO>success()
                     .dataList(fileList.getRecords(), fileList.getTotal());
@@ -380,17 +389,14 @@ public class FileController
     public RestResult<String> deleteImageByIds(
             @RequestBody
                     BatchDeleteFileDTO batchDeleteFileDto) {
-        String userFileIds = batchDeleteFileDto.getUserFileIds();
-        String[] userFileIdList = userFileIds.split(",");
-        userFileService.update(new UpdateWrapper<UserFile>()
-                .lambda()
+        final List<String> userFileIdList = Arrays.asList(batchDeleteFileDto
+                .getUserFileIds()
+                .split(","));
+        userFileService.update(new LambdaUpdateWrapper<UserFile>()
                 .set(UserFile::getDeleteFlag, FileDeleteFlagEnum.DELETED.getDeleteFlag())
-                .in(UserFile::getUserFileId, Arrays.asList(userFileIdList)));
+                .in(UserFile::getUserFileId, userFileIdList));
         for (String userFileId : userFileIdList) {
-            executor.execute(() -> {
-                userFileService.deleteUserFile(userFileId, SessionUtil.getUserId());
-            });
-
+            executor.execute(() -> userFileService.deleteUserFile(userFileId, SessionUtil.getUserId()));
             fileDealComp.deleteESByUserFileId(userFileId);
         }
 
@@ -410,13 +416,9 @@ public class FileController
     public RestResult deleteFile(
             @RequestBody
                     DeleteFileDTO deleteFileDto) {
-
-        JwtUser sessionUserBean = SessionUtil.getSession();
-        userFileService.deleteUserFile(deleteFileDto.getUserFileId(), sessionUserBean.getUserId());
+        userFileService.deleteUserFile(deleteFileDto.getUserFileId(), SessionUtil.getUserId());
         fileDealComp.deleteESByUserFileId(deleteFileDto.getUserFileId());
-
         return RestResult.success();
-
     }
 
     @Operation(summary = "解压文件",
@@ -430,7 +432,6 @@ public class FileController
     public RestResult<String> unzipFile(
             @RequestBody
                     UnzipFileDTO unzipFileDto) {
-
         try {
             fileService.unzipFile(unzipFileDto.getUserFileId(), unzipFileDto.getUnzipMode(), unzipFileDto.getFilePath());
         }
@@ -441,7 +442,6 @@ public class FileController
         }
 
         return RestResult.success();
-
     }
 
     @Operation(summary = "文件复制",
@@ -455,16 +455,17 @@ public class FileController
     public RestResult<String> copyFile(
             @RequestBody
                     CopyFileDTO copyFileDTO) {
-        String userId = SessionUtil.getUserId();
-        String filePath = copyFileDTO.getFilePath();
-        String userFileIds = copyFileDTO.getUserFileIds();
-        String[] userFileIdArr = userFileIds.split(",");
+        final String userId = SessionUtil.getUserId();
+        final String filePath = copyFileDTO.getFilePath();
+        final String userFileIds = copyFileDTO.getUserFileIds();
+        final String[] userFileIdArr = userFileIds.split(",");
+
         for (String userFileId : userFileIdArr) {
-            UserFile userFile = userFileService.getById(userFileId);
-            String oldfilePath = userFile.getFilePath();
-            String fileName = userFile.getFileName();
+            final UserFile userFile = userFileService.getById(userFileId);
+            final String oldFilePath = userFile.getFilePath();
+            final String fileName = userFile.getFileName();
             if (userFile.isDirectory()) {
-                QiwenFile qiwenFile = new QiwenFile(oldfilePath, fileName, true);
+                QiwenFile qiwenFile = new QiwenFile(oldFilePath, fileName, true);
                 if (filePath.startsWith(qiwenFile.getPath() + QiwenFile.separator) || filePath.equals(qiwenFile.getPath())) {
                     return RestResult
                             .<String>fail()
@@ -472,6 +473,7 @@ public class FileController
                 }
             }
 
+            // 复制文件
             userFileService.userFileCopy(SessionUtil.getUserId(), userFileId, filePath);
             fileDealComp.deleteRepeatSubDirFile(filePath, userId);
         }
@@ -491,25 +493,28 @@ public class FileController
     public RestResult<String> moveFile(
             @RequestBody
                     MoveFileDTO moveFileDto) {
+        final String userId = SessionUtil.getUserId();
+        final UserFile userFile = userFileService.getById(moveFileDto.getUserFileId());
+        final String oldFilePath = userFile.getFilePath();
+        final String newFilePath = moveFileDto.getFilePath();
+        final String fileName = userFile.getFileName();
+        final String extendName = userFile.getExtendName();
 
-        JwtUser sessionUserBean = SessionUtil.getSession();
-        UserFile userFile = userFileService.getById(moveFileDto.getUserFileId());
-        String oldfilePath = userFile.getFilePath();
-        String newfilePath = moveFileDto.getFilePath();
-        String fileName = userFile.getFileName();
-        String extendName = userFile.getExtendName();
         if (StringUtil.isEmpty(extendName)) {
-            QiwenFile qiwenFile = new QiwenFile(oldfilePath, fileName, true);
-            if (newfilePath.startsWith(qiwenFile.getPath() + QiwenFile.separator) || newfilePath.equals(qiwenFile.getPath())) {
+            QiwenFile qiwenFile = new QiwenFile(oldFilePath, fileName, true);
+            if (newFilePath.startsWith(qiwenFile.getPath() + QiwenFile.separator) || newFilePath.equals(qiwenFile.getPath())) {
                 return RestResult
                         .<String>fail()
                         .message("原路径与目标路径冲突，不能移动");
             }
         }
 
-        userFileService.updateFilepathByUserFileId(moveFileDto.getUserFileId(), newfilePath, sessionUserBean.getUserId());
+        // 移动文件
+        userFileService.updateFilepathByUserFileId(moveFileDto.getUserFileId(), newFilePath, userId);
 
-        fileDealComp.deleteRepeatSubDirFile(newfilePath, sessionUserBean.getUserId());
+        // 删除重复文件
+        fileDealComp.deleteRepeatSubDirFile(newFilePath, userId);
+
         return RestResult.success();
 
     }
@@ -525,14 +530,13 @@ public class FileController
     public RestResult<String> batchMoveFile(
             @RequestBody
                     BatchMoveFileDTO batchMoveFileDto) {
+        final String userId = SessionUtil.getUserId();
 
-        JwtUser sessionUserBean = SessionUtil.getSession();
+        final String newfilePath = batchMoveFileDto.getFilePath();
+        final String userFileIds = batchMoveFileDto.getUserFileIds();
+        final String[] userFileIdArr = userFileIds.split(",");
 
-        String newfilePath = batchMoveFileDto.getFilePath();
-
-        String userFileIds = batchMoveFileDto.getUserFileIds();
-        String[] userFileIdArr = userFileIds.split(",");
-
+        // 批量移动文件
         for (String userFileId : userFileIdArr) {
             UserFile userFile = userFileService.getById(userFileId);
             if (StringUtil.isEmpty(userFile.getExtendName())) {
@@ -543,7 +547,7 @@ public class FileController
                             .message("原路径与目标路径冲突，不能移动");
                 }
             }
-            userFileService.updateFilepathByUserFileId(userFile.getUserFileId(), newfilePath, sessionUserBean.getUserId());
+            userFileService.updateFilepathByUserFileId(userFile.getUserFileId(), newfilePath, userId);
         }
 
         return RestResult
@@ -559,42 +563,39 @@ public class FileController
                     method = RequestMethod.GET)
     @ResponseBody
     public RestResult<TreeNode> getFileTree() {
-        RestResult<TreeNode> result = new RestResult<TreeNode>();
+        final String userId = SessionUtil.getUserId();
 
-        JwtUser sessionUserBean = SessionUtil.getSession();
-
-        List<UserFile> userFileList = userFileService.selectFilePathTreeByUserId(sessionUserBean.getUserId());
-        TreeNode resultTreeNode = new TreeNode();
-        resultTreeNode.setLabel(QiwenFile.separator);
-        resultTreeNode.setId(0L);
+        List<UserFile> userFileList = userFileService.selectFilePathTreeByUserId(userId);
+        TreeNode resultTreeNode = new TreeNode()
+                .setLabel(QiwenFile.separator)
+                .setId(0L);
         long id = 1;
         for (int i = 0; i < userFileList.size(); i++) {
             UserFile userFile = userFileList.get(i);
             QiwenFile qiwenFile = new QiwenFile(userFile.getFilePath(), userFile.getFileName(), false);
             String filePath = qiwenFile.getPath();
 
+            // 获取文件路径
             Queue<String> queue = new LinkedList<>();
-
-            String[] strArr = filePath.split(QiwenFile.separator);
-            for (int j = 0; j < strArr.length; j++) {
-                final String s = strArr[j];
-                if (StringUtils.isNotEmpty(s)) {
-                    queue.add(s);
-                }
-
-            }
-            if (queue.size() == 0) {
+            Arrays
+                    .stream(filePath.split(QiwenFile.separator))
+                    .filter(StringUtils::isNotEmpty)
+                    .forEach(queue::add);
+            if (CollectionUtils.isEmpty(queue)) {
                 continue;
             }
 
+            // 插入树节点
             resultTreeNode = fileDealComp.insertTreeNode(resultTreeNode, id++, QiwenFile.separator, queue);
-
         }
-        List<TreeNode> treeNodeList = resultTreeNode.getChildren();
-        Collections.sort(treeNodeList, (o1, o2) -> {
-            long i = o1.getId() - o2.getId();
-            return (int) i;
-        });
+
+        // 排序
+        resultTreeNode
+                .getChildren()
+                .sort((o1, o2) -> (int) (o1.getId() - o2.getId()));
+
+        // 返回结果
+        RestResult<TreeNode> result = new RestResult<>();
         result.setSuccess(true);
         result.setData(resultTreeNode);
         return result;
@@ -610,35 +611,28 @@ public class FileController
     public RestResult<String> updateFile(
             @RequestBody
                     UpdateFileDTO updateFileDTO) {
-        JwtUser sessionUserBean = SessionUtil.getSession();
-        UserFile userFile = userFileService.getById(updateFileDTO.getUserFileId());
-        FileBean fileBean = fileService.getById(userFile.getFileId());
-        Long pointCount = fileService.getFilePointCount(userFile.getFileId());
+        final UserFile userFile = userFileService.getById(updateFileDTO.getUserFileId());
+        final String fileId = userFile.getFileId();
+        final FileBean fileBean = fileService.getById(fileId);
+        final Long pointCount = fileService.getFilePointCount(fileId);
+        final String content = updateFileDTO.getFileContent();
+
         String fileUrl = fileBean.getFileUrl();
         if (pointCount > 1) {
             fileUrl = fileDealComp.copyFile(fileBean, userFile);
         }
-        String content = updateFileDTO.getFileContent();
-        ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(content.getBytes());
-        try {
-            int fileSize = byteArrayInputStream.available();
+
+        try (ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(content.getBytes())) {
+            // 保存文件
+            final int fileSize = byteArrayInputStream.available();
             fileDealComp.saveFileInputStream(fileBean.getStorageType(), fileUrl, byteArrayInputStream);
 
+            // 更新文件详情
             String md5Str = fileDealComp.getIdentifierByFile(fileUrl, fileBean.getStorageType());
-
             fileService.updateFileDetail(userFile.getUserFileId(), md5Str, fileSize);
-
         }
         catch (Exception e) {
             throw new QiwenException(999999, "修改文件异常");
-        }
-        finally {
-            try {
-                byteArrayInputStream.close();
-            }
-            catch (IOException e) {
-                e.printStackTrace();
-            }
         }
         return RestResult
                 .<String>success()

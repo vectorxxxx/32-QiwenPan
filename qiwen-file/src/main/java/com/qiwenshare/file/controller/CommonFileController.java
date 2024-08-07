@@ -5,7 +5,6 @@ import com.alibaba.fastjson2.JSON;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.qiwenshare.common.anno.MyLog;
 import com.qiwenshare.common.result.RestResult;
-import com.qiwenshare.common.util.security.JwtUser;
 import com.qiwenshare.common.util.security.SessionUtil;
 import com.qiwenshare.file.api.ICommonFileService;
 import com.qiwenshare.file.api.IFilePermissionService;
@@ -31,8 +30,8 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Tag(name = "common",
      description = "该接口为文件共享接口")
@@ -61,20 +60,20 @@ public class CommonFileController
     public RestResult<String> commonFile(
             @RequestBody
                     CommonFileDTO commonFileDTO) {
-        CommonFile commonFile = new CommonFile();
-        commonFile.setUserFileId(commonFileDTO.getUserFileId());
-        commonFile.setCommonFileId(IdUtil.getSnowflakeNextIdStr());
-
+        // 保存共享文件
+        CommonFile commonFile = new CommonFile()
+                .setUserFileId(commonFileDTO.getUserFileId())
+                .setCommonFileId(IdUtil.getSnowflakeNextIdStr());
         commonFileService.save(commonFile);
 
-        List<FilePermission> list = JSON.parseArray(commonFileDTO.getCommonUserList(), FilePermission.class);
-
-        List<FilePermission> filePermissionList = new ArrayList<>();
-        for (FilePermission filePermission : list) {
-            filePermission.setFilePermissionId(IdUtil.getSnowflakeNextId());
-            filePermission.setCommonFileId(commonFile.commonFileId);
-            filePermissionList.add(filePermission);
-        }
+        // 保存共享文件权限
+        List<FilePermission> filePermissionList = JSON
+                .parseArray(commonFileDTO.getCommonUserList(), FilePermission.class)
+                .stream()
+                .peek(filePermission -> filePermission
+                        .setFilePermissionId(IdUtil.getSnowflakeNextId())
+                        .setCommonFileId(commonFile.commonFileId))
+                .collect(Collectors.toList());
         filePermissionService.saveBatch(filePermissionList);
 
         return RestResult.success();
@@ -88,9 +87,7 @@ public class CommonFileController
            module = CURRENT_MODULE)
     @ResponseBody
     public RestResult<List<CommonFileUser>> commonFileUserList() {
-
-        JwtUser sessionUserBean = SessionUtil.getSession();
-        List<CommonFileUser> list = commonFileService.selectCommonFileUser(sessionUserBean.getUserId());
+        List<CommonFileUser> list = commonFileService.selectCommonFileUser(SessionUtil.getUserId());
         return RestResult
                 .<List<CommonFileUser>>success()
                 .data(list);
@@ -106,9 +103,7 @@ public class CommonFileController
             @Parameter(description = "用户id",
                        required = true)
                     String userId) {
-        JwtUser sessionUserBean = SessionUtil.getSession();
-        List<CommonFileListVo> commonFileVo = commonFileService.selectCommonFileByUser(userId, sessionUserBean.getUserId());
-
+        List<CommonFileListVo> commonFileVo = commonFileService.selectCommonFileByUser(userId, SessionUtil.getUserId());
         return RestResult
                 .<List<CommonFileListVo>>success()
                 .data(commonFileVo);
@@ -134,7 +129,6 @@ public class CommonFileController
             @Parameter(description = "页面数量",
                        required = true)
                     long pageCount) {
-
         CommonFile commonFile = commonFileService.getById(commonFileId);
         UserFile userFile = userFileService.getById(commonFile.getUserFileId());
         QiwenFile qiwenFile = new QiwenFile(userFile.getFilePath(), filePath, true);

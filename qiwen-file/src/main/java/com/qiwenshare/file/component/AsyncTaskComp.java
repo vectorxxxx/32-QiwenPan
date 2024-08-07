@@ -66,7 +66,7 @@ public class AsyncTaskComp
 
     public Future<String> deleteUserFile(String userFileId) {
         UserFile userFile = userFileMapper.selectById(userFileId);
-        if (userFile.getIsDir() == 1) {
+        if (userFile.isDirectory()) {
             LambdaQueryWrapper<UserFile> userFileLambdaQueryWrapper = new LambdaQueryWrapper<>();
             userFileLambdaQueryWrapper.eq(UserFile::getDeleteBatchNum, userFile.getDeleteBatchNum());
             List<UserFile> list = userFileMapper.selectList(userFileLambdaQueryWrapper);
@@ -75,7 +75,7 @@ public class AsyncTaskComp
 
                 Long filePointCount = getFilePointCount(userFileItem.getFileId());
 
-                if (Objects.nonNull(filePointCount) && filePointCount == 0 && userFileItem.getIsDir() == 0) {
+                if (Objects.nonNull(filePointCount) && filePointCount == 0 && userFileItem.isFile()) {
                     FileBean fileBean = fileMapper.selectById(userFileItem.getFileId());
                     if (Objects.nonNull(fileBean)) {
                         try {
@@ -95,7 +95,7 @@ public class AsyncTaskComp
             recoveryFileService.deleteUserFileByDeleteBatchNum(userFile.getDeleteBatchNum());
             Long filePointCount = getFilePointCount(userFile.getFileId());
 
-            if (Objects.nonNull(filePointCount) && filePointCount == 0 && userFile.getIsDir() == 0) {
+            if (Objects.nonNull(filePointCount) && filePointCount == 0 && userFile.isFile()) {
                 FileBean fileBean = fileMapper.selectById(userFile.getFileId());
                 try {
                     filetransferService.deleteFile(fileBean);
@@ -200,7 +200,7 @@ public class AsyncTaskComp
         UserFile saveUserFile = new UserFile(qiwenFile, userFile.getUserId(), fileId);
         String fileName = fileDealComp.getRepeatFileName(saveUserFile, saveUserFile.getFilePath());
 
-        if (saveUserFile.getIsDir() == 1 && !fileName.equals(saveUserFile.getFileName())) {
+        if (saveUserFile.isDirectory() && !fileName.equals(saveUserFile.getFileName())) {
             //如果是目录，而且重复，什么也不做
         }
         else {

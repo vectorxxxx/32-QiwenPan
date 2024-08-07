@@ -112,7 +112,7 @@ public class ShareController
                         .<ShareFileVO>fail()
                         .message("您只能分享自己的文件");
             }
-            if (userFile.getIsDir() == 1) {
+            if (userFile.isDirectory()) {
                 QiwenFile qiwenFile = new QiwenFile(userFile.getFilePath(), userFile.getFileName(), true);
                 List<UserFile> userfileList = userFileService.selectUserFileByLikeRightFilePath(qiwenFile.getPath(), sessionUserBean.getUserId());
                 for (UserFile userFile1 : userfileList) {
@@ -177,7 +177,7 @@ public class ShareController
 
             String savefileName = fileDealComp.getRepeatFileName(userFile, savefilePath);
 
-            if (userFile.getIsDir() == 1) {
+            if (userFile.isDirectory()) {
                 ShareFile shareFile = shareFileService.getOne(new QueryWrapper<ShareFile>()
                         .lambda()
                         .eq(ShareFile::getUserFileId, userFileId)

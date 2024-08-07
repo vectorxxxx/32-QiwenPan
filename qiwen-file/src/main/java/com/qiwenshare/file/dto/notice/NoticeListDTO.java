@@ -2,9 +2,11 @@ package com.qiwenshare.file.dto.notice;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
+import lombok.experimental.Accessors;
 
 @Data
 @Schema(name = "公告列表DTO")
+@Accessors(chain = true)
 public class NoticeListDTO
 {
     @Schema(description = "当前页，从1开始",

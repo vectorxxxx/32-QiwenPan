@@ -36,17 +36,9 @@ public class TaskController
         List<UserFile> userfileList = userFileService.list(new LambdaQueryWrapper<UserFile>().eq(UserFile::getDeleteFlag, FileDeleteFlagEnum.NOT_DELETED.getDeleteFlag()));
         for (int i = 0; i < userfileList.size(); i++) {
             try {
-
-                QiwenFile ufopFile = new QiwenFile(userfileList
-                        .get(i)
-                        .getFilePath(), userfileList
-                        .get(i)
-                        .getFileName(), userfileList
-                        .get(i)
-                        .getIsDir() == 1);
-                fileDealComp.restoreParentFilePath(ufopFile, userfileList
-                        .get(i)
-                        .getUserId());
+                final UserFile userFile = userfileList.get(i);
+                QiwenFile ufopFile = new QiwenFile(userFile.getFilePath(), userFile.getFileName(), userFile.isDirectory());
+                fileDealComp.restoreParentFilePath(ufopFile, userFile.getUserId());
                 if (i % 1000 == 0 || i == userfileList.size() - 1) {
                     log.info("目录健康检查进度：" + (i + 1) + "/" + userfileList.size());
                 }

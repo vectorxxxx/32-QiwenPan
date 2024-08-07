@@ -208,8 +208,7 @@ public class FiletransferService implements IFiletransferService
             }
 
             if (UploadFileStatusEnum.SUCCESS.equals(uploadFileResult.getStatus())) {
-                FileBean fileBean = new FileBean(uploadFileResult);
-                fileBean.setCreateUserId(userId);
+                FileBean fileBean = new FileBean(uploadFileResult).setCreateUserId(userId);
                 try {
                     fileMapper.insert(fileBean);
                 }

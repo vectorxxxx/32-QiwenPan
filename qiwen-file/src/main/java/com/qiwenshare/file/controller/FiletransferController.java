@@ -44,6 +44,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -83,9 +84,6 @@ public class FiletransferController
            module = CURRENT_MODULE)
     @ResponseBody
     public RestResult<UploadFileVo> uploadFileSpeed(UploadFileDTO uploadFileDto) {
-
-        JwtUser sessionUserBean = SessionUtil.getSession();
-
         boolean isCheckSuccess = storageService.checkStorage(SessionUtil.getUserId(), uploadFileDto.getTotalSize());
         if (!isCheckSuccess) {
             return RestResult
@@ -108,10 +106,7 @@ public class FiletransferController
            module = CURRENT_MODULE)
     @ResponseBody
     public RestResult<UploadFileVo> uploadFile(HttpServletRequest request, UploadFileDTO uploadFileDto) {
-
-        JwtUser sessionUserBean = SessionUtil.getSession();
-
-        filetransferService.uploadFile(request, uploadFileDto, sessionUserBean.getUserId());
+        filetransferService.uploadFile(request, uploadFileDto, SessionUtil.getUserId());
 
         UploadFileVo uploadFileVo = new UploadFileVo();
         return RestResult
@@ -146,7 +141,7 @@ public class FiletransferController
         httpServletResponse.setContentType("application/force-download");// 设置强制下载不打开
         UserFile userFile = userFileService.getById(downloadFileDTO.getUserFileId());
         String fileName = "";
-        if (userFile.getIsDir() == 1) {
+        if (userFile.isDirectory()) {
             fileName = userFile.getFileName() + ".zip";
         }
         else {
@@ -195,7 +190,7 @@ public class FiletransferController
         List<String> userFileIds = new ArrayList<>();
         for (String userFileId : userFileIdStrs) {
             UserFile userFile = userFileService.getById(userFileId);
-            if (userFile.getIsDir() == 0) {
+            if (userFile.isFile()) {
                 userFileIds.add(userFileId);
             }
             else {
@@ -253,12 +248,7 @@ public class FiletransferController
         }
 
         String fileName = userFile.getFileName() + "." + userFile.getExtendName();
-        try {
-            fileName = new String(fileName.getBytes("utf-8"), "ISO-8859-1");
-        }
-        catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        }
+        fileName = new String(fileName.getBytes(StandardCharsets.UTF_8), StandardCharsets.ISO_8859_1);
 
         httpServletResponse.addHeader("Content-Disposition", "fileName=" + fileName);// 设置文件名
         String mime = MimeUtils.getMime(userFile.getExtendName());

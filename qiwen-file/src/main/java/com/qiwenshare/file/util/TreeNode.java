@@ -1,6 +1,7 @@
 package com.qiwenshare.file.util;
 
 import lombok.Data;
+import lombok.experimental.Accessors;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -9,6 +10,7 @@ import java.util.List;
  * 树节点
  */
 @Data
+@Accessors(chain = true)
 public class TreeNode
 {
     /**

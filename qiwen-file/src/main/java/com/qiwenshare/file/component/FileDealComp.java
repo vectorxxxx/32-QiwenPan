@@ -102,46 +102,39 @@ public class FileDealComp
      * @return
      */
     public String getRepeatFileName(UserFile userFile, String savefilePath) {
-        String fileName = userFile.getFileName();
-        String extendName = userFile.getExtendName();
+        final String fileName = userFile.getFileName();
+        final String extendName = userFile.getExtendName();
+        final String userId = userFile.getUserId();
+        final int isDir = userFile.getIsDir();
 
-        String userId = userFile.getUserId();
-        int isDir = userFile.getIsDir();
-        LambdaQueryWrapper<UserFile> lambdaQueryWrapper = new LambdaQueryWrapper<>();
-        lambdaQueryWrapper
-                .eq(UserFile::getFilePath, savefilePath)
-                .eq(UserFile::getDeleteFlag, FileDeleteFlagEnum.NOT_DELETED.getDeleteFlag())
+        // 查询当前用户下，文件名、扩展名、是否是目录、删除标识为0的文件
+        List<UserFile> list = userFileMapper.selectList(new LambdaQueryWrapper<UserFile>()
                 .eq(UserFile::getUserId, userId)
+                .eq(UserFile::getFilePath, savefilePath)
                 .eq(UserFile::getFileName, fileName)
-                .eq(UserFile::getIsDir, isDir);
-        if (userFile.isFile()) {
-            lambdaQueryWrapper.eq(UserFile::getExtendName, extendName);
-        }
-        List<UserFile> list = userFileMapper.selectList(lambdaQueryWrapper);
+                .eq(userFile.isFile(), UserFile::getExtendName, extendName)
+                .eq(UserFile::getIsDir, isDir)
+                .eq(UserFile::getDeleteFlag, FileDeleteFlagEnum.NOT_DELETED.getDeleteFlag()));
         if (CollectionUtils.isEmpty(list)) {
             return fileName;
         }
 
         int i = 0;
-
-        while (!CollectionUtils.isEmpty(list)) {
+        while (CollectionUtils.isNotEmpty(list)) {
             i++;
-            LambdaQueryWrapper<UserFile> lambdaQueryWrapper1 = new LambdaQueryWrapper<>();
-            lambdaQueryWrapper1
-                    .eq(UserFile::getFilePath, savefilePath)
-                    .eq(UserFile::getDeleteFlag, FileDeleteFlagEnum.NOT_DELETED.getDeleteFlag())
+            list = userFileMapper.selectList(new LambdaQueryWrapper<UserFile>()
                     .eq(UserFile::getUserId, userId)
+                    .eq(UserFile::getFilePath, savefilePath)
                     .eq(UserFile::getFileName, fileName + "(" + i + ")")
-                    .eq(UserFile::getIsDir, isDir);
-            if (userFile.isFile()) {
-                lambdaQueryWrapper1.eq(UserFile::getExtendName, extendName);
-            }
-            list = userFileMapper.selectList(lambdaQueryWrapper1);
-
+                    .eq(userFile.isFile(), UserFile::getExtendName, extendName)
+                    .eq(UserFile::getIsDir, isDir)
+                    .eq(UserFile::getDeleteFlag, FileDeleteFlagEnum.NOT_DELETED.getDeleteFlag()));
         }
 
-        return fileName + "(" + i + ")";
-
+        return fileName
+                .concat("(")
+                .concat(String.valueOf(i))
+                .concat(")");
     }
 
     /**
@@ -191,25 +184,24 @@ public class FileDealComp
      */
     public void deleteRepeatSubDirFile(String filePath, String sessionUserId) {
         log.debug("删除子目录：" + filePath);
-        LambdaQueryWrapper<UserFile> lambdaQueryWrapper = new LambdaQueryWrapper<>();
 
-        lambdaQueryWrapper
+        // 获取重复的子目录
+        final LambdaQueryWrapper<UserFile> userFileLambdaQueryWrapper = new LambdaQueryWrapper<>();
+        List<UserFile> repeatList = userFileMapper.selectList(userFileLambdaQueryWrapper
                 .select(UserFile::getFileName, UserFile::getFilePath)
-                .likeRight(UserFile::getFilePath, QiwenFileUtil.formatLikePath(filePath))
-                .eq(UserFile::getIsDir, 1)
-                .eq(UserFile::getDeleteFlag, FileDeleteFlagEnum.NOT_DELETED.getDeleteFlag())
                 .eq(UserFile::getUserId, sessionUserId)
+                .eq(UserFile::getIsDir, FileDirEnum.DIR.getType())
+                .eq(UserFile::getDeleteFlag, FileDeleteFlagEnum.NOT_DELETED.getDeleteFlag())
+                .likeRight(UserFile::getFilePath, QiwenFileUtil.formatLikePath(filePath))
                 .groupBy(UserFile::getFilePath, UserFile::getFileName)
-                .having("count(fileName) >= 2");
-        List<UserFile> repeatList = userFileMapper.selectList(lambdaQueryWrapper);
+                .having("count(fileName) >= 2"));
 
+        // 删除重复的子目录
         for (UserFile userFile : repeatList) {
-            LambdaQueryWrapper<UserFile> lambdaQueryWrapper1 = new LambdaQueryWrapper<>();
-            lambdaQueryWrapper1
+            List<UserFile> userFiles = userFileMapper.selectList(userFileLambdaQueryWrapper
                     .eq(UserFile::getFilePath, userFile.getFilePath())
                     .eq(UserFile::getFileName, userFile.getFileName())
-                    .eq(UserFile::getDeleteFlag, FileDeleteFlagEnum.NOT_DELETED.getDeleteFlag());
-            List<UserFile> userFiles = userFileMapper.selectList(lambdaQueryWrapper1);
+                    .eq(UserFile::getDeleteFlag, FileDeleteFlagEnum.NOT_DELETED.getDeleteFlag()));
             for (int i = 0; i < userFiles.size() - 1; i++) {
                 userFileMapper.deleteById(userFiles
                         .get(i)

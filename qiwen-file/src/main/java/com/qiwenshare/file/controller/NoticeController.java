@@ -1,7 +1,6 @@
 package com.qiwenshare.file.controller;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.qiwenshare.common.constant.PlatformEnum;
 import com.qiwenshare.common.result.RestResult;
 import com.qiwenshare.file.api.INoticeService;
 import com.qiwenshare.file.domain.Notice;
@@ -40,8 +39,30 @@ public class NoticeController
     public RestResult<NoticeVO> selectUserList(
             @Parameter(description = "当前页，从1开始")
             @RequestParam(defaultValue = "1")
-                    NoticeListDTO noticeListDTO) {
-        noticeListDTO.setPlatform(PlatformEnum.PAN.getCode());
+                    int page,
+            @Parameter(description = "页大小")
+            @RequestParam(defaultValue = "10")
+                    int pageSize,
+            @Parameter(description = "标题")
+            @RequestParam(required = false)
+                    String title,
+            @Parameter(description = "发布者")
+            @RequestParam(required = false)
+                    Long publisher,
+            @Parameter(description = "开始发布时间")
+            @RequestParam(required = false)
+                    String beginTime,
+            @Parameter(description = "开始发布时间")
+            @RequestParam(required = false)
+                    String endTime) {
+        NoticeListDTO noticeListDTO = new NoticeListDTO()
+                .setPage(page)
+                .setPageSize(pageSize)
+                .setTitle(title)
+                .setPlatform(3)
+                .setPublisher(publisher)
+                .setBeginTime(beginTime)
+                .setEndTime(endTime);
         IPage<NoticeVO> noticeIPage = noticeService.selectUserPage(noticeListDTO);
         return RestResult
                 .<NoticeVO>success()
