@@ -1,9 +1,10 @@
 package com.qiwenshare.file.controller;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.qiwenshare.file.api.IShareFileService;
 import com.qiwenshare.file.component.FileDealComp;
+import com.qiwenshare.file.constant.FileDeleteFlagEnum;
 import com.qiwenshare.file.domain.ShareFile;
 import com.qiwenshare.file.domain.UserFile;
 import com.qiwenshare.file.io.QiwenFile;
@@ -32,7 +33,7 @@ public class TaskController
 
     @Scheduled(fixedRate = 1000 * 60 * 60 * 24)
     public void updateElasticSearch() {
-        List<UserFile> userfileList = userFileService.list(new QueryWrapper<UserFile>().eq("deleteFlag", 0));
+        List<UserFile> userfileList = userFileService.list(new LambdaQueryWrapper<UserFile>().eq(UserFile::getDeleteFlag, FileDeleteFlagEnum.NOT_DELETED.getDeleteFlag()));
         for (int i = 0; i < userfileList.size(); i++) {
             try {
 
@@ -55,7 +56,7 @@ public class TaskController
                 log.error(e.getMessage());
             }
         }
-        userfileList = userFileService.list(new QueryWrapper<UserFile>().eq("deleteFlag", 0));
+        userfileList = userFileService.list(new LambdaQueryWrapper<UserFile>().eq(UserFile::getDeleteFlag, FileDeleteFlagEnum.NOT_DELETED.getDeleteFlag()));
         for (UserFile userFile : userfileList) {
             fileDealComp.uploadESByUserFileId(userFile.getUserFileId());
         }

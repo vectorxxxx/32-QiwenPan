@@ -14,8 +14,10 @@ import com.qiwenshare.common.util.security.JwtUser;
 import com.qiwenshare.common.util.security.SessionUtil;
 import com.qiwenshare.file.api.IUserFileService;
 import com.qiwenshare.file.component.FileDealComp;
+import com.qiwenshare.file.constant.FileDeleteFlagEnum;
 import com.qiwenshare.file.domain.RecoveryFile;
 import com.qiwenshare.file.domain.UserFile;
+import com.qiwenshare.file.dto.file.CreateFileDTO;
 import com.qiwenshare.file.io.QiwenFile;
 import com.qiwenshare.file.mapper.RecoveryFileMapper;
 import com.qiwenshare.file.mapper.UserFileMapper;
@@ -54,20 +56,18 @@ public class UserFileService extends ServiceImpl<UserFileMapper, UserFile> imple
                 .eq(UserFile::getFileName, fileName)
                 .eq(UserFile::getFilePath, filePath)
                 .eq(UserFile::getUserId, userId)
-                .eq(UserFile::getDeleteFlag, 0);
+                .eq(UserFile::getDeleteFlag, FileDeleteFlagEnum.NOT_DELETED.getDeleteFlag());
         return userFileMapper.selectList(lambdaQueryWrapper);
     }
 
     @Override
-    public List<UserFile> selectSameUserFile(String fileName, String filePath, String extendName, String userId) {
-        LambdaQueryWrapper<UserFile> lambdaQueryWrapper = new LambdaQueryWrapper<>();
-        lambdaQueryWrapper
-                .eq(UserFile::getFileName, fileName)
-                .eq(UserFile::getFilePath, filePath)
+    public List<UserFile> selectSameUserFile(CreateFileDTO createFileDTO, String userId) {
+        return userFileMapper.selectList(new LambdaQueryWrapper<UserFile>()
                 .eq(UserFile::getUserId, userId)
-                .eq(UserFile::getExtendName, extendName)
-                .eq(UserFile::getDeleteFlag, "0");
-        return userFileMapper.selectList(lambdaQueryWrapper);
+                .eq(UserFile::getFilePath, createFileDTO.getFilePath())
+                .eq(UserFile::getFileName, createFileDTO.getFileName())
+                .eq(UserFile::getExtendName, createFileDTO.getExtendName())
+                .eq(UserFile::getDeleteFlag, FileDeleteFlagEnum.NOT_DELETED.getDeleteFlag()));
     }
 
     @Override
@@ -193,7 +193,7 @@ public class UserFileService extends ServiceImpl<UserFileMapper, UserFile> imple
         lambdaQueryWrapper
                 .eq(UserFile::getFilePath, filePath)
                 .eq(UserFile::getUserId, userId)
-                .eq(UserFile::getDeleteFlag, 0);
+                .eq(UserFile::getDeleteFlag, FileDeleteFlagEnum.NOT_DELETED.getDeleteFlag());
         return userFileMapper.selectList(lambdaQueryWrapper);
     }
 
@@ -203,7 +203,7 @@ public class UserFileService extends ServiceImpl<UserFileMapper, UserFile> imple
         lambdaQueryWrapper
                 .eq(UserFile::getUserId, userId)
                 .eq(UserFile::getIsDir, 1)
-                .eq(UserFile::getDeleteFlag, 0);
+                .eq(UserFile::getDeleteFlag, FileDeleteFlagEnum.NOT_DELETED.getDeleteFlag());
         return userFileMapper.selectList(lambdaQueryWrapper);
     }
 
@@ -265,7 +265,7 @@ public class UserFileService extends ServiceImpl<UserFileMapper, UserFile> imple
                         .set(UserFile::getDeleteTime, DateUtil.getCurrentTime())
                         .set(UserFile::getDeleteBatchNum, deleteBatchNum)
                         .in(UserFile::getUserFileId, userFileIds)
-                        .eq(UserFile::getDeleteFlag, 0);
+                        .eq(UserFile::getDeleteFlag, FileDeleteFlagEnum.NOT_DELETED.getDeleteFlag());
                 userFileMapper.update(null, userFileLambdaUpdateWrapper1);
             }
             for (String userFileId : userFileIds) {

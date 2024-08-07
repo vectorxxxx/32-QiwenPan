@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.qiwenshare.file.api.IRecoveryFileService;
 import com.qiwenshare.file.component.FileDealComp;
+import com.qiwenshare.file.constant.FileDeleteFlagEnum;
 import com.qiwenshare.file.domain.RecoveryFile;
 import com.qiwenshare.file.domain.UserFile;
 import com.qiwenshare.file.io.QiwenFile;
@@ -47,7 +48,7 @@ public class RecoveryFileService extends ServiceImpl<RecoveryFileMapper, Recover
                 .lambda()
                 .eq(UserFile::getDeleteBatchNum, deleteBatchNum));
         for (UserFile restoreUserFile : restoreUserFileList) {
-            restoreUserFile.setDeleteFlag(0);
+            restoreUserFile.setDeleteFlag(FileDeleteFlagEnum.NOT_DELETED.getDeleteFlag());
             restoreUserFile.setDeleteBatchNum(deleteBatchNum);
             String fileName = fileDealComp.getRepeatFileName(restoreUserFile, restoreUserFile.getFilePath());
             if (restoreUserFile.isDirectory()) {

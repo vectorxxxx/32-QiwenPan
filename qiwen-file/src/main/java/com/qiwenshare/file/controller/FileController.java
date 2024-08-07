@@ -20,6 +20,8 @@ import com.qiwenshare.file.api.IUserFileService;
 import com.qiwenshare.file.component.AsyncTaskComp;
 import com.qiwenshare.file.component.FileDealComp;
 import com.qiwenshare.file.config.es.FileSearch;
+import com.qiwenshare.file.constant.FileDeleteFlagEnum;
+import com.qiwenshare.file.constant.FileExtendTemplatePathEnum;
 import com.qiwenshare.file.domain.FileBean;
 import com.qiwenshare.file.domain.UserFile;
 import com.qiwenshare.file.dto.file.BatchDeleteFileDTO;
@@ -50,6 +52,7 @@ import org.eclipse.jetty.util.StringUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.util.ClassUtils;
+import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -62,12 +65,15 @@ import javax.validation.Valid;
 import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.net.URL;
 import java.net.URLDecoder;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Queue;
 import java.util.UUID;
 import java.util.concurrent.Executor;
@@ -81,6 +87,11 @@ import java.util.regex.Pattern;
 @RequestMapping("/file")
 public class FileController
 {
+    private static final String CURRENT_MODULE = "文件接口";
+
+    private static final String PATH_STATIC = "static";
+
+    public static Executor executor = Executors.newFixedThreadPool(20);
 
     @Resource
     private IFileService fileService;
@@ -97,10 +108,6 @@ public class FileController
     @Value("${ufop.storage-type}")
     private Integer storageType;
 
-    public static Executor executor = Executors.newFixedThreadPool(20);
-
-    public static final String CURRENT_MODULE = "文件接口";
-
     @Operation(summary = "创建文件",
                description = "创建文件",
                tags = {"file"})
@@ -112,74 +119,62 @@ public class FileController
                                                  CreateFileDTO createFileDTO) {
 
         try {
-
-            String userId = SessionUtil.getUserId();
-            String filePath = createFileDTO.getFilePath();
-            String fileName = createFileDTO.getFileName();
-            String extendName = createFileDTO.getExtendName();
-            List<UserFile> userFiles = userFileService.selectSameUserFile(fileName, filePath, extendName, userId);
-            if (userFiles != null && !userFiles.isEmpty()) {
+            final String userId = SessionUtil.getUserId();
+            List<UserFile> userFiles = userFileService.selectSameUserFile(createFileDTO, userId);
+            if (!CollectionUtils.isEmpty(userFiles)) {
                 return RestResult
                         .fail()
                         .message("同名文件已存在");
             }
-            String uuid = UUID
-                    .randomUUID()
-                    .toString()
-                    .replaceAll("-", "");
 
-            String templateFilePath = "";
-            if ("docx".equals(extendName)) {
-                templateFilePath = "template/Word.docx";
-            }
-            else if ("xlsx".equals(extendName)) {
-                templateFilePath = "template/Excel.xlsx";
-            }
-            else if ("pptx".equals(extendName)) {
-                templateFilePath = "template/PowerPoint.pptx";
-            }
-            else if ("txt".equals(extendName)) {
-                templateFilePath = "template/Text.txt";
-            }
-            else if ("drawio".equals(extendName)) {
-                templateFilePath = "template/Drawio.drawio";
-            }
-            String url2 = ClassUtils
-                    .getDefaultClassLoader()
-                    .getResource("static/" + templateFilePath)
+            final String filePath = createFileDTO.getFilePath();
+            final String fileName = createFileDTO.getFileName();
+            final String extendName = createFileDTO.getExtendName();
+            final String templateFilePath = Paths
+                    .get(PATH_STATIC, FileExtendTemplatePathEnum.getTemplateFilePath(extendName))
+                    .toString();
+            final URL resource = Objects
+                    .requireNonNull(ClassUtils.getDefaultClassLoader())
+                    .getResource(templateFilePath);
+            String url = Objects
+                    .requireNonNull(resource)
                     .getPath();
-            url2 = URLDecoder.decode(url2, "UTF-8");
-            FileInputStream fileInputStream = new FileInputStream(url2);
+            url = URLDecoder.decode(url, "UTF-8");
+            FileInputStream fileInputStream = new FileInputStream(url);
             Copier copier = ufopFactory.getCopier();
             CopyFile copyFile = new CopyFile();
             copyFile.setExtendName(extendName);
             String fileUrl = copier.copy(fileInputStream, copyFile);
 
-            FileBean fileBean = new FileBean();
-            fileBean.setFileId(IdUtil.getSnowflakeNextIdStr());
-            fileBean.setFileSize(0L);
-            fileBean.setFileUrl(fileUrl);
-            fileBean.setStorageType(storageType);
-            fileBean.setIdentifier(uuid);
-            fileBean.setCreateTime(DateUtil.getCurrentTime());
-            fileBean.setCreateUserId(SessionUtil
-                    .getSession()
-                    .getUserId());
-            fileBean.setFileStatus(1);
+            // 保存文件信息
+            final String currentTime = DateUtil.getCurrentTime();
+            FileBean fileBean = new FileBean()
+                    .setFileId(IdUtil.getSnowflakeNextIdStr())
+                    .setFileSize(0L)
+                    .setFileUrl(fileUrl)
+                    .setStorageType(storageType)
+                    .setIdentifier(UUID
+                            .randomUUID()
+                            .toString()
+                            .replaceAll("-", ""))
+                    .setCreateUserId(userId)
+                    .setCreateTime(currentTime)
+                    .setFileStatus(1);
             boolean saveFlag = fileService.save(fileBean);
-            UserFile userFile = new UserFile();
+
+            // 保存用户文件信息
             if (saveFlag) {
-                userFile.setUserFileId(IdUtil.getSnowflakeNextIdStr());
-                userFile.setUserId(userId);
-                userFile.setFileName(fileName);
-                userFile.setFilePath(filePath);
-                userFile.setDeleteFlag(0);
-                userFile.setIsDir(0);
-                userFile.setExtendName(extendName);
-                userFile.setUploadTime(DateUtil.getCurrentTime());
-                userFile.setFileId(fileBean.getFileId());
-                userFile.setCreateTime(DateUtil.getCurrentTime());
-                userFile.setCreateUserId(SessionUtil.getUserId());
+                UserFile userFile = new UserFile()
+                        .setUserFileId(IdUtil.getSnowflakeNextIdStr())
+                        .setFileId(fileBean.getFileId())
+                        .setFileName(fileName)
+                        .setFilePath(filePath)
+                        .setDeleteFlag(FileDeleteFlagEnum.NOT_DELETED.getDeleteFlag())
+                        .setIsDir(0)
+                        .setExtendName(extendName)
+                        .setCreateUserId(userId)
+                        .setCreateTime(currentTime)
+                        .setUploadTime(currentTime);
                 userFileService.save(userFile);
             }
             return RestResult
@@ -187,7 +182,7 @@ public class FileController
                     .message("文件创建成功");
         }
         catch (Exception e) {
-            log.error(e.getMessage());
+            log.error("文件创建失败：{}", e.getMessage(), e);
             return RestResult
                     .fail()
                     .message(e.getMessage());
@@ -205,23 +200,23 @@ public class FileController
     public RestResult<String> createFold(@Valid
                                          @RequestBody
                                                  CreateFoldDTO createFoldDto) {
+        final String userId = SessionUtil.getUserId();
+        final String fileName = createFoldDto.getFileName();
+        final String filePath = createFoldDto.getFilePath();
 
-        String userId = SessionUtil
-                .getSession()
-                .getUserId();
-        String filePath = createFoldDto.getFilePath();
-
-        boolean isDirExist = fileDealComp.isDirExist(createFoldDto.getFileName(), createFoldDto.getFilePath(), userId);
-
+        // 判断文件夹是否存在
+        boolean isDirExist = fileDealComp.isDirExist(fileName, filePath, userId);
         if (isDirExist) {
             return RestResult
                     .<String>fail()
                     .message("同名文件夹已存在");
         }
 
-        UserFile userFile = QiwenFileUtil.getQiwenDir(userId, filePath, createFoldDto.getFileName());
-
+        // 保存文件夹信息
+        UserFile userFile = QiwenFileUtil.getQiwenDir(userId, filePath, fileName);
         userFileService.save(userFile);
+
+        // 建立 ElasticSearch 索引
         fileDealComp.uploadESByUserFileId(userFile.getUserFileId());
         return RestResult.success();
     }
@@ -384,7 +379,7 @@ public class FileController
         String[] userFileIdList = userFileIds.split(",");
         userFileService.update(new UpdateWrapper<UserFile>()
                 .lambda()
-                .set(UserFile::getDeleteFlag, 1)
+                .set(UserFile::getDeleteFlag, FileDeleteFlagEnum.DELETED.getDeleteFlag())
                 .in(UserFile::getUserFileId, Arrays.asList(userFileIdList)));
         for (String userFileId : userFileIdList) {
             executor.execute(() -> {

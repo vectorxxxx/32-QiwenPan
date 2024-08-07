@@ -5,8 +5,11 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.qiwenshare.common.util.DateUtil;
+import com.qiwenshare.file.constant.FileDeleteFlagEnum;
 import com.qiwenshare.file.io.QiwenFile;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.Accessors;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -24,6 +27,8 @@ import javax.persistence.UniqueConstraint;
        })
 @Entity
 @TableName("userfile")
+@NoArgsConstructor
+@Accessors(chain = true)
 public class UserFile
 {
     @Id
@@ -71,10 +76,6 @@ public class UserFile
     @Column(columnDefinition = "varchar(20) comment '修改用户id'")
     private String modifyUserId;
 
-    public UserFile() {}
-
-    ;
-
     public UserFile(QiwenFile qiwenFile, String userId, String fileId) {
         this.userFileId = IdUtil.getSnowflakeNextIdStr();
         this.userId = userId;
@@ -89,7 +90,7 @@ public class UserFile
         this.setUploadTime(currentTime);
         this.setCreateUserId(userId);
         this.setCreateTime(currentTime);
-        this.deleteFlag = 0;
+        this.deleteFlag = FileDeleteFlagEnum.NOT_DELETED.getDeleteFlag();
     }
 
     public boolean isDirectory() {

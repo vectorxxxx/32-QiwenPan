@@ -3,6 +3,7 @@ package com.qiwenshare.file.api;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.qiwenshare.file.domain.UserFile;
+import com.qiwenshare.file.dto.file.CreateFileDTO;
 import com.qiwenshare.file.vo.file.FileListVO;
 import org.apache.ibatis.annotations.Param;
 
@@ -12,7 +13,7 @@ public interface IUserFileService extends IService<UserFile>
 {
     List<UserFile> selectUserFileByNameAndPath(String fileName, String filePath, String userId);
 
-    List<UserFile> selectSameUserFile(String fileName, String filePath, String extendName, String userId);
+    List<UserFile> selectSameUserFile(CreateFileDTO createFileDTO, String userId);
 
     IPage<FileListVO> userFileList(String userId, String filePath, Long beginCount, Long pageCount);
 

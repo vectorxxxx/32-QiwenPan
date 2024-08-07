@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import com.qiwenshare.common.util.DateUtil;
 import com.qiwenshare.ufop.operation.upload.domain.UploadFileResult;
 import lombok.Data;
+import lombok.experimental.Accessors;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -24,6 +25,7 @@ import javax.persistence.Table;
 @Table(name = "file")
 @Entity
 @TableName("file")
+@Accessors(chain = true)
 public class FileBean
 {
 

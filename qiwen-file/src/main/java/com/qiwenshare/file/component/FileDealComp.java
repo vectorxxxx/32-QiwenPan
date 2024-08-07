@@ -12,6 +12,8 @@ import com.qiwenshare.file.api.IShareFileService;
 import com.qiwenshare.file.api.IShareService;
 import com.qiwenshare.file.api.IUserService;
 import com.qiwenshare.file.config.es.FileSearch;
+import com.qiwenshare.file.constant.FileDeleteFlagEnum;
+import com.qiwenshare.file.constant.FileDirEnum;
 import com.qiwenshare.file.domain.FileBean;
 import com.qiwenshare.file.domain.Music;
 import com.qiwenshare.file.domain.Share;
@@ -107,7 +109,7 @@ public class FileDealComp
         LambdaQueryWrapper<UserFile> lambdaQueryWrapper = new LambdaQueryWrapper<>();
         lambdaQueryWrapper
                 .eq(UserFile::getFilePath, savefilePath)
-                .eq(UserFile::getDeleteFlag, 0)
+                .eq(UserFile::getDeleteFlag, FileDeleteFlagEnum.NOT_DELETED.getDeleteFlag())
                 .eq(UserFile::getUserId, userId)
                 .eq(UserFile::getFileName, fileName)
                 .eq(UserFile::getIsDir, isDir);
@@ -126,7 +128,7 @@ public class FileDealComp
             LambdaQueryWrapper<UserFile> lambdaQueryWrapper1 = new LambdaQueryWrapper<>();
             lambdaQueryWrapper1
                     .eq(UserFile::getFilePath, savefilePath)
-                    .eq(UserFile::getDeleteFlag, 0)
+                    .eq(UserFile::getDeleteFlag, FileDeleteFlagEnum.NOT_DELETED.getDeleteFlag())
                     .eq(UserFile::getUserId, userId)
                     .eq(UserFile::getFileName, fileName + "(" + i + ")")
                     .eq(UserFile::getIsDir, isDir);
@@ -161,7 +163,7 @@ public class FileDealComp
             lambdaQueryWrapper
                     .eq(UserFile::getFilePath, parentFilePath)
                     .eq(UserFile::getFileName, fileName)
-                    .eq(UserFile::getDeleteFlag, 0)
+                    .eq(UserFile::getDeleteFlag, FileDeleteFlagEnum.NOT_DELETED.getDeleteFlag())
                     .eq(UserFile::getIsDir, 1)
                     .eq(UserFile::getUserId, sessionUserId);
             List<UserFile> userFileList = userFileMapper.selectList(lambdaQueryWrapper);
@@ -194,7 +196,7 @@ public class FileDealComp
                 .select(UserFile::getFileName, UserFile::getFilePath)
                 .likeRight(UserFile::getFilePath, QiwenFileUtil.formatLikePath(filePath))
                 .eq(UserFile::getIsDir, 1)
-                .eq(UserFile::getDeleteFlag, 0)
+                .eq(UserFile::getDeleteFlag, FileDeleteFlagEnum.NOT_DELETED.getDeleteFlag())
                 .eq(UserFile::getUserId, sessionUserId)
                 .groupBy(UserFile::getFilePath, UserFile::getFileName)
                 .having("count(fileName) >= 2");
@@ -205,7 +207,7 @@ public class FileDealComp
             lambdaQueryWrapper1
                     .eq(UserFile::getFilePath, userFile.getFilePath())
                     .eq(UserFile::getFileName, userFile.getFileName())
-                    .eq(UserFile::getDeleteFlag, "0");
+                    .eq(UserFile::getDeleteFlag, FileDeleteFlagEnum.NOT_DELETED.getDeleteFlag());
             List<UserFile> userFiles = userFileMapper.selectList(lambdaQueryWrapper1);
             for (int i = 0; i < userFiles.size() - 1; i++) {
                 userFileMapper.deleteById(userFiles
@@ -302,7 +304,7 @@ public class FileDealComp
                 Map<String, Object> param = new HashMap<>();
                 param.put("userFileId", userFileId);
                 List<UserFile> userfileResult = userFileMapper.selectByMap(param);
-                if (userfileResult != null && userfileResult.size() > 0) {
+                if (CollectionUtils.isNotEmpty(userfileResult)) {
                     FileSearch fileSearch = new FileSearch();
                     BeanUtil.copyProperties(userfileResult.get(0), fileSearch);
                 /*if (fileSearch.getIsDir() == 0) {
@@ -458,18 +460,13 @@ public class FileDealComp
     }
 
     public boolean isDirExist(String fileName, String filePath, String userId) {
-        LambdaQueryWrapper<UserFile> lambdaQueryWrapper = new LambdaQueryWrapper<>();
-        lambdaQueryWrapper
+        final Long count = userFileMapper.selectCount(new LambdaQueryWrapper<UserFile>()
                 .eq(UserFile::getFileName, fileName)
                 .eq(UserFile::getFilePath, QiwenFile.formatPath(filePath))
                 .eq(UserFile::getUserId, userId)
-                .eq(UserFile::getDeleteFlag, 0)
-                .eq(UserFile::getIsDir, 1);
-        List<UserFile> list = userFileMapper.selectList(lambdaQueryWrapper);
-        if (list != null && !list.isEmpty()) {
-            return true;
-        }
-        return false;
+                .eq(UserFile::getDeleteFlag, FileDeleteFlagEnum.NOT_DELETED.getDeleteFlag())
+                .eq(UserFile::getIsDir, FileDirEnum.DIR.getType()));
+        return count > 0;
     }
 
     public void parseMusicFile(String extendName, int storageType, String fileUrl, String fileId) {
