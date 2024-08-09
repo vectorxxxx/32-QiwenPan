@@ -58,7 +58,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
@@ -493,6 +492,7 @@ public class FiletransferService implements IFiletransferService
 
     @Override
     public void previewPictureFile(HttpServletResponse httpServletResponse, PreviewDTO previewDTO) {
+        // 获取预览器
         byte[] bytesUrl = Base64
                 .getDecoder()
                 .decode(previewDTO.getUrl());
@@ -507,21 +507,19 @@ public class FiletransferService implements IFiletransferService
         PreviewFile previewFile = new PreviewFile();
         previewFile.setFileUrl(pictureFile.getFileUrl());
         //        previewFile.setFileSize(pictureFile.getFileSize());
-        try {
 
+        try {
+            // 设置内容类型
             String mime = MimeUtils.getMime(pictureFile.getExtendName());
             httpServletResponse.setHeader("Content-Type", mime);
-
-            String fileName = pictureFile.getFileName() + "." + pictureFile.getExtendName();
-            try {
-                fileName = new String(fileName.getBytes("utf-8"), "ISO-8859-1");
-            }
-            catch (UnsupportedEncodingException e) {
-                e.printStackTrace();
-            }
-
-            httpServletResponse.addHeader("Content-Disposition", "fileName=" + fileName);// 设置文件名
-
+            // 设置文件名
+            String fileName = pictureFile
+                    .getFileName()
+                    .concat(".")
+                    .concat(pictureFile.getExtendName());
+            fileName = new String(fileName.getBytes(StandardCharsets.UTF_8), StandardCharsets.ISO_8859_1);
+            httpServletResponse.addHeader("Content-Disposition", "fileName=".concat(fileName));// 设置文件名
+            // 预览图片
             previewer.imageOriginalPreview(httpServletResponse, previewFile);
         }
         catch (Exception e) {
@@ -534,17 +532,17 @@ public class FiletransferService implements IFiletransferService
             else {
                 log.error("预览文件出现异常：{}", e.getMessage());
             }
-
         }
     }
 
     @Override
     public void deleteFile(FileBean fileBean) {
-        Deleter deleter = null;
-
-        deleter = ufopFactory.getDeleter(fileBean.getStorageType());
+        // 设置删除文件
         DeleteFile deleteFile = new DeleteFile();
         deleteFile.setFileUrl(fileBean.getFileUrl());
+        // 获取删除器
+        Deleter deleter = ufopFactory.getDeleter(fileBean.getStorageType());
+        // 删除文件
         deleter.delete(deleteFile);
     }
 
