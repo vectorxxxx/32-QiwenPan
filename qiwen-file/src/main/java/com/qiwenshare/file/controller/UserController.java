@@ -42,16 +42,16 @@ import java.util.Objects;
 @RequestMapping("/user")
 public class UserController
 {
+    private static final String CURRENT_MODULE = "用户管理";
+
+    public static Map<String, String> verificationCodeMap = new HashMap<>();
+
     @Resource
     private IUserService userService;
     @Resource
     private IUserLoginInfoService userLoginInfoService;
     @Resource
     private JwtComp jwtComp;
-
-    public static Map<String, String> verificationCodeMap = new HashMap<>();
-
-    public static final String CURRENT_MODULE = "用户管理";
 
     @Operation(summary = "用户注册",
                description = "注册账号",

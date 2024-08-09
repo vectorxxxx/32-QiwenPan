@@ -16,7 +16,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.io.IOUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.AsyncResult;
@@ -43,38 +42,38 @@ public class AsyncTaskComp
 {
 
     @Resource
-    IRecoveryFileService recoveryFileService;
+    private IRecoveryFileService recoveryFileService;
     @Resource
-    IFiletransferService filetransferService;
+    private IFiletransferService filetransferService;
     @Resource
-    UFOPFactory ufopFactory;
+    private UFOPFactory ufopFactory;
     @Resource
-    UserFileMapper userFileMapper;
+    private UserFileMapper userFileMapper;
     @Resource
-    FileMapper fileMapper;
+    private FileMapper fileMapper;
     @Resource
-    FileDealComp fileDealComp;
+    private FileDealComp fileDealComp;
 
     @Value("${ufop.storage-type}")
     private Integer storageType;
 
     public Long getFilePointCount(String fileId) {
-        LambdaQueryWrapper<UserFile> lambdaQueryWrapper = new LambdaQueryWrapper<>();
-        lambdaQueryWrapper.eq(UserFile::getFileId, fileId);
-        return userFileMapper.selectCount(lambdaQueryWrapper);
+        return userFileMapper.selectCount(new LambdaQueryWrapper<UserFile>().eq(UserFile::getFileId, fileId));
     }
 
     public Future<String> deleteUserFile(String userFileId) {
+        // 查询用户文件
         UserFile userFile = userFileMapper.selectById(userFileId);
+        // 1、目录
         if (userFile.isDirectory()) {
-            LambdaQueryWrapper<UserFile> userFileLambdaQueryWrapper = new LambdaQueryWrapper<>();
-            userFileLambdaQueryWrapper.eq(UserFile::getDeleteBatchNum, userFile.getDeleteBatchNum());
-            List<UserFile> list = userFileMapper.selectList(userFileLambdaQueryWrapper);
+            // 删除回收站文件
             recoveryFileService.deleteUserFileByDeleteBatchNum(userFile.getDeleteBatchNum());
+            // 删除目录下的所有文件
+            List<UserFile> list = userFileMapper.selectList(new LambdaQueryWrapper<UserFile>().eq(UserFile::getDeleteBatchNum, userFile.getDeleteBatchNum()));
             for (UserFile userFileItem : list) {
-
+                // 根据文件ID查询文件数
                 Long filePointCount = getFilePointCount(userFileItem.getFileId());
-
+                // 文件点数为0，删除文件
                 if (Objects.nonNull(filePointCount) && filePointCount == 0 && userFileItem.isFile()) {
                     FileBean fileBean = fileMapper.selectById(userFileItem.getFileId());
                     if (Objects.nonNull(fileBean)) {
@@ -86,15 +85,16 @@ public class AsyncTaskComp
                             log.error("删除本地文件失败：" + JSON.toJSONString(fileBean));
                         }
                     }
-
                 }
             }
         }
+        // 2、文件
         else {
-
+            // 删除回收站文件
             recoveryFileService.deleteUserFileByDeleteBatchNum(userFile.getDeleteBatchNum());
+            // 根据文件ID查询文件数
             Long filePointCount = getFilePointCount(userFile.getFileId());
-
+            // 文件点数为0，删除文件
             if (Objects.nonNull(filePointCount) && filePointCount == 0 && userFile.isFile()) {
                 FileBean fileBean = fileMapper.selectById(userFile.getFileId());
                 try {
@@ -128,52 +128,49 @@ public class AsyncTaskComp
 
         String fileId = null;
         if (!currentFile.isDirectory()) {
-
-            FileInputStream fis = null;
+            // 获取文件MD5
             String md5Str = UUID
                     .randomUUID()
                     .toString();
-            try {
-                fis = new FileInputStream(currentFile);
+            try (FileInputStream fis = new FileInputStream(currentFile)) {
                 md5Str = DigestUtils.md5Hex(fis);
             }
             catch (IOException e) {
-                e.printStackTrace();
-            }
-            finally {
-                IOUtils.closeQuietly(fis);
+                log.error("获取文件MD5失败：{}", e.getMessage(), e);
             }
 
-            FileInputStream fileInputStream = null;
             try {
                 Map<String, Object> param = new HashMap<>();
                 param.put("identifier", md5Str);
                 List<FileBean> list = fileMapper.selectByMap(param);
 
-                if (CollectionUtils.isNotEmpty(list)) { //文件已存在
+                // 文件已存在
+                if (CollectionUtils.isNotEmpty(list)) {
                     fileId = list
                             .get(0)
                             .getFileId();
                 }
-                else { //文件不存在
-                    fileInputStream = new FileInputStream(currentFile);
+                // 文件不存在
+                else {
                     CopyFile createFile = new CopyFile();
                     createFile.setExtendName(FilenameUtils.getExtension(totalFileUrl));
-                    String saveFileUrl = ufopFactory
-                            .getCopier()
-                            .copy(fileInputStream, createFile);
+                    String saveFileUrl;
+                    try (FileInputStream fileInputStream = new FileInputStream(currentFile)) {
+                        saveFileUrl = ufopFactory
+                                .getCopier()
+                                .copy(fileInputStream, createFile);
+                    }
 
+                    // 保存文件
                     FileBean tempFileBean = new FileBean(saveFileUrl, currentFile.length(), storageType, md5Str, userFile.getUserId());
-
                     fileMapper.insert(tempFileBean);
                     fileId = tempFileBean.getFileId();
                 }
             }
             catch (IOException e) {
-                e.printStackTrace();
+                log.error("保存文件失败：{}", e.getMessage(), e);
             }
             finally {
-                IOUtils.closeQuietly(fileInputStream);
                 System.gc();
                 try {
                     Thread.sleep(100);
@@ -183,7 +180,6 @@ public class AsyncTaskComp
                 }
                 currentFile.delete();
             }
-
         }
 
         QiwenFile qiwenFile = null;
@@ -200,10 +196,8 @@ public class AsyncTaskComp
         UserFile saveUserFile = new UserFile(qiwenFile, userFile.getUserId(), fileId);
         String fileName = fileDealComp.getRepeatFileName(saveUserFile, saveUserFile.getFilePath());
 
-        if (saveUserFile.isDirectory() && !fileName.equals(saveUserFile.getFileName())) {
-            //如果是目录，而且重复，什么也不做
-        }
-        else {
+        //如果是目录，而且重复，什么也不做
+        if (!saveUserFile.isDirectory() || !fileName.equals(saveUserFile.getFileName())) {
             saveUserFile.setFileName(fileName);
             userFileMapper.insert(saveUserFile);
         }

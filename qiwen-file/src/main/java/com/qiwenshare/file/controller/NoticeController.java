@@ -22,7 +22,8 @@ import javax.annotation.Resource;
 @RequestMapping("/notice")
 public class NoticeController
 {
-    public static final String CURRENT_MODULE = "公告管理";
+    private static final String CURRENT_MODULE = "公告管理";
+
     @Resource
     private INoticeService noticeService;
 

@@ -111,7 +111,7 @@ public class DefaultCallbackManager implements CallbackManager
             try {
                 String newFileUri = serviceConverter.getConvertedUri(downloadUri, downloadExt, curExt, serviceConverter.generateRevisionId(downloadUri), null, false,
                         null);  // convert a file and get URL to a new file
-                if (newFileUri.isEmpty()) {
+                if (StringUtils.isEmpty(newFileUri)) {
                     newFileName = documentManager.getCorrectName(
                             fileUtility.getFileNameWithoutExtension(fileName) + downloadExt);  // get the correct file name if it already exists
                 }
@@ -263,7 +263,7 @@ public class DefaultCallbackManager implements CallbackManager
             try {
                 String newFileUri = serviceConverter.getConvertedUri(downloadUri, downloadExt, curExt, serviceConverter.generateRevisionId(downloadUri), null, false,
                         null);  // convert file and get URL to a new file
-                if (newFileUri.isEmpty()) {
+                if (StringUtils.isEmpty(newFileUri)) {
                     newFileName = true;
                 }
                 else {
@@ -305,7 +305,7 @@ public class DefaultCallbackManager implements CallbackManager
             }
 
             forcesavePath = storagePathBuilder.getForcesavePath(fileName, false);
-            if (forcesavePath.isEmpty()) {
+            if (StringUtils.isEmpty(forcesavePath)) {
                 forcesavePath = storagePathBuilder.getForcesavePath(fileName, true);
             }
         }

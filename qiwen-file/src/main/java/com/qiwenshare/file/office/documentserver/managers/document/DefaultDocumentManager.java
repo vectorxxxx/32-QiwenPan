@@ -15,6 +15,7 @@ import com.qiwenshare.file.office.documentserver.storage.FileStorageMutator;
 import com.qiwenshare.file.office.documentserver.storage.FileStoragePathBuilder;
 import com.qiwenshare.file.office.documentserver.util.file.FileUtility;
 import com.qiwenshare.file.office.documentserver.util.service.ServiceConverter;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Primary;
@@ -58,6 +59,7 @@ public class DefaultDocumentManager implements DocumentManager
     private HttpServletRequest request;
 
     // get URL to the created file
+    @Override
     public String getCreateUrl(String fileName, Boolean sample) {
         String fileExt = fileName.substring(fileName.length() - 4);
         String url = storagePathBuilder.getServerUrl(true) + "/create?fileExt=" + fileExt + "&sample=" + sample;
@@ -65,6 +67,7 @@ public class DefaultDocumentManager implements DocumentManager
     }
 
     // get a file name with an index if the file with such a name already exists
+    @Override
     public String getCorrectName(String fileName) {
         String baseName = fileUtility.getFileNameWithoutExtension(fileName);  // get file name without extension
         String ext = fileUtility.getFileExtension(fileName);  // get file extension
@@ -82,6 +85,7 @@ public class DefaultDocumentManager implements DocumentManager
     }
 
     // get file URL
+    @Override
     public String getFileUri(String fileName, Boolean forDocumentServer) {
         try {
             String serverPath = storagePathBuilder.getServerUrl(forDocumentServer);  // get server URL
@@ -96,7 +100,7 @@ public class DefaultDocumentManager implements DocumentManager
                                               .getLocalHost()
                                               .getHostAddress()
                                               .length() + 1);
-            if (!filesStorage.isEmpty() && filePathDownload.contains(filesStorage)) {
+            if (StringUtils.isNotEmpty(filesStorage) && filePathDownload.contains(filesStorage)) {
                 filePathDownload = filePathDownload.substring(filesStorage.length() + 1);
             }
 
@@ -110,6 +114,7 @@ public class DefaultDocumentManager implements DocumentManager
     }
 
     // get file URL
+    @Override
     public String getHistoryFileUrl(String fileName, Integer version, String file, Boolean forDocumentServer) {
         try {
             String serverPath = storagePathBuilder.getServerUrl(forDocumentServer);  // get server URL
@@ -137,6 +142,7 @@ public class DefaultDocumentManager implements DocumentManager
     }
 
     // get the callback URL
+    @Override
     public String getCallback(String userFileId) {
         String serverPath = storagePathBuilder.getServerUrl(true);
 
@@ -147,12 +153,14 @@ public class DefaultDocumentManager implements DocumentManager
     }
 
     // get URL to download a file
+    @Override
     public String getDownloadUrl(String fileName, Boolean isServer) {
 
         return "";
     }
 
     // get file information
+    @Override
     public ArrayList<Map<String, Object>> getFilesInfo() {
         ArrayList<Map<String, Object>> files = new ArrayList<>();
 
@@ -175,6 +183,7 @@ public class DefaultDocumentManager implements DocumentManager
     }
 
     // get file information by its ID
+    @Override
     public ArrayList<Map<String, Object>> getFilesInfo(String fileId) {
         ArrayList<Map<String, Object>> file = new ArrayList<>();
 
@@ -191,6 +200,7 @@ public class DefaultDocumentManager implements DocumentManager
     }
 
     // get the path to the file version by the history path and file version
+    @Override
     public String versionDir(String path, Integer version, boolean historyPath) {
         if (!historyPath) {
             return storagePathBuilder.getHistoryDir(storagePathBuilder.getFileLocation(path)) + version;

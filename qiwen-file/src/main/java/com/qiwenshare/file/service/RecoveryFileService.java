@@ -1,7 +1,6 @@
 package com.qiwenshare.file.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.qiwenshare.file.api.IRecoveryFileService;
 import com.qiwenshare.file.component.FileDealComp;
@@ -34,23 +33,20 @@ public class RecoveryFileService extends ServiceImpl<RecoveryFileMapper, Recover
 
     @Override
     public void deleteUserFileByDeleteBatchNum(String deleteBatchNum) {
-
-        LambdaQueryWrapper<UserFile> userFileLambdaQueryWrapper = new LambdaQueryWrapper<>();
-        userFileLambdaQueryWrapper.eq(UserFile::getDeleteBatchNum, deleteBatchNum);
-        userFileMapper.delete(userFileLambdaQueryWrapper);
-
+        userFileMapper.delete(new LambdaQueryWrapper<UserFile>().eq(UserFile::getDeleteBatchNum, deleteBatchNum));
     }
 
     @Override
     public void restorefile(String deleteBatchNum, String filePath, String sessionUserId) {
-
-        List<UserFile> restoreUserFileList = userFileMapper.selectList(new QueryWrapper<UserFile>()
-                .lambda()
-                .eq(UserFile::getDeleteBatchNum, deleteBatchNum));
+        // 查询回收站的文件
+        List<UserFile> restoreUserFileList = userFileMapper.selectList(new LambdaQueryWrapper<UserFile>().eq(UserFile::getDeleteBatchNum, deleteBatchNum));
         for (UserFile restoreUserFile : restoreUserFileList) {
-            restoreUserFile.setDeleteFlag(FileDeleteFlagEnum.NOT_DELETED.getDeleteFlag());
-            restoreUserFile.setDeleteBatchNum(deleteBatchNum);
+            // 文件重命名
+            restoreUserFile
+                    .setDeleteFlag(FileDeleteFlagEnum.NOT_DELETED.getDeleteFlag())
+                    .setDeleteBatchNum(deleteBatchNum);
             String fileName = fileDealComp.getRepeatFileName(restoreUserFile, restoreUserFile.getFilePath());
+            // 判断是否是目录
             if (restoreUserFile.isDirectory()) {
                 if (!StringUtils.equals(fileName, restoreUserFile.getFileName())) {
                     userFileMapper.deleteById(restoreUserFile);
@@ -59,18 +55,19 @@ public class RecoveryFileService extends ServiceImpl<RecoveryFileMapper, Recover
                     userFileMapper.updateById(restoreUserFile);
                 }
             }
+            // 判断是否是文件
             else if (restoreUserFile.isFile()) {
                 restoreUserFile.setFileName(fileName);
                 userFileMapper.updateById(restoreUserFile);
             }
         }
 
+        // 恢复父级目录
         QiwenFile qiwenFile = new QiwenFile(filePath, true);
         fileDealComp.restoreParentFilePath(qiwenFile, sessionUserId);
 
-        LambdaQueryWrapper<RecoveryFile> recoveryFileServiceLambdaQueryWrapper = new LambdaQueryWrapper<>();
-        recoveryFileServiceLambdaQueryWrapper.eq(RecoveryFile::getDeleteBatchNum, deleteBatchNum);
-        recoveryFileMapper.delete(recoveryFileServiceLambdaQueryWrapper);
+        // 删除回收站文件
+        recoveryFileMapper.delete(new LambdaQueryWrapper<RecoveryFile>().eq(RecoveryFile::getDeleteBatchNum, deleteBatchNum));
     }
 
     @Override

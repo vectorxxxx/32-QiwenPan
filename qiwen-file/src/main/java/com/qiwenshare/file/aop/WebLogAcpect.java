@@ -2,7 +2,6 @@ package com.qiwenshare.file.aop;
 
 import com.qiwenshare.common.anno.MyLog;
 import com.qiwenshare.common.result.RestResult;
-import com.qiwenshare.common.util.security.JwtUser;
 import com.qiwenshare.common.util.security.SessionUtil;
 import com.qiwenshare.file.api.IOperationLogService;
 import com.qiwenshare.file.util.OperationLogUtil;
@@ -60,7 +59,6 @@ public class WebLogAcpect
 
         //获取操作
         MyLog myLog = method.getAnnotation(MyLog.class);
-
         if (Objects.nonNull(myLog)) {
             operation = myLog.operation();
             module = myLog.module();
@@ -69,7 +67,6 @@ public class WebLogAcpect
         // 接收到请求，记录请求内容
         ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
         request = attributes.getRequest();
-
     }
 
     @AfterReturning(returning = "ret",
@@ -79,11 +76,7 @@ public class WebLogAcpect
         if (ret instanceof RestResult) {
             boolean isSuccess = ((RestResult) ret).getSuccess();
             String errorMessage = ((RestResult) ret).getMessage();
-            JwtUser sessionUser = SessionUtil.getSession();
-            String userId = "";
-            if (Objects.nonNull(sessionUser)) {
-                userId = sessionUser.getUserId();
-            }
+            String userId = SessionUtil.getUserId();
 
             Integer code = ((RestResult) ret).getCode();
             if (Objects.nonNull(code) && code == 200001) {
@@ -91,7 +84,6 @@ public class WebLogAcpect
                 userId = data.getUserId();
             }
             if (isSuccess) {
-
                 operationLogService.insertOperationLog(OperationLogUtil.getOperationLogObj(request, userId, "成功", module, operation, "操作成功"));
             }
             else {

@@ -1,6 +1,6 @@
 package com.qiwenshare.file.controller;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.qiwenshare.common.anno.MyLog;
 import com.qiwenshare.common.result.RestResult;
 import com.qiwenshare.common.util.security.JwtUser;
@@ -32,13 +32,13 @@ import java.util.Objects;
 @RequestMapping("/recoveryfile")
 public class RecoveryFileController
 {
+    private static final String CURRENT_MODULE = "回收站文件接口";
+
     @Resource
     private IRecoveryFileService recoveryFileService;
 
     @Resource
     private AsyncTaskComp asyncTaskComp;
-
-    public static final String CURRENT_MODULE = "回收站文件接口";
 
     @Operation(summary = "删除回收文件",
                description = "删除回收文件",
@@ -51,12 +51,13 @@ public class RecoveryFileController
     public RestResult<String> deleteRecoveryFile(
             @RequestBody
                     DeleteRecoveryFileDTO deleteRecoveryFileDTO) {
-        RecoveryFile recoveryFile = recoveryFileService.getOne(new QueryWrapper<RecoveryFile>()
-                .lambda()
-                .eq(RecoveryFile::getUserFileId, deleteRecoveryFileDTO.getUserFileId()));
+        // 获取回收站文件
+        RecoveryFile recoveryFile = recoveryFileService.getOne(new LambdaQueryWrapper<RecoveryFile>().eq(RecoveryFile::getUserFileId, deleteRecoveryFileDTO.getUserFileId()));
 
+        // 删除文件
         asyncTaskComp.deleteUserFile(recoveryFile.getUserFileId());
 
+        // 删除回收站文件
         recoveryFileService.removeById(recoveryFile.getRecoveryFileId());
         return RestResult
                 .<String>success()
@@ -74,19 +75,18 @@ public class RecoveryFileController
     public RestResult<String> batchDeleteRecoveryFile(
             @RequestBody
                     BatchDeleteRecoveryFileDTO batchDeleteRecoveryFileDTO) {
-        String userFileIds = batchDeleteRecoveryFileDTO.getUserFileIds();
-        String[] userFileIdList = userFileIds.split(",");
+        String[] userFileIdList = batchDeleteRecoveryFileDTO
+                .getUserFileIds()
+                .split(",");
         for (String userFileId : userFileIdList) {
-            RecoveryFile recoveryFile = recoveryFileService.getOne(new QueryWrapper<RecoveryFile>()
-                    .lambda()
-                    .eq(RecoveryFile::getUserFileId, userFileId));
-
+            // 获取回收站文件
+            RecoveryFile recoveryFile = recoveryFileService.getOne(new LambdaQueryWrapper<RecoveryFile>().eq(RecoveryFile::getUserFileId, userFileId));
             if (Objects.nonNull(recoveryFile)) {
+                // 删除文件
                 asyncTaskComp.deleteUserFile(recoveryFile.getUserFileId());
-
+                // 删除回收站文件
                 recoveryFileService.removeById(recoveryFile.getRecoveryFileId());
             }
-
         }
         return RestResult
                 .<String>success()
@@ -118,8 +118,7 @@ public class RecoveryFileController
     public RestResult<String> restoreFile(
             @RequestBody
                     RestoreFileDTO restoreFileDto) {
-        JwtUser sessionUserBean = SessionUtil.getSession();
-        recoveryFileService.restorefile(restoreFileDto.getDeleteBatchNum(), restoreFileDto.getFilePath(), sessionUserBean.getUserId());
+        recoveryFileService.restorefile(restoreFileDto.getDeleteBatchNum(), restoreFileDto.getFilePath(), SessionUtil.getUserId());
         return RestResult
                 .<String>success()
                 .message("还原成功！");

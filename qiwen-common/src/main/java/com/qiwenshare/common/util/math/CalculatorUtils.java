@@ -1,5 +1,7 @@
 package com.qiwenshare.common.util.math;
 
+import org.springframework.util.CollectionUtils;
+
 import java.util.Collections;
 import java.util.Stack;
 
@@ -70,7 +72,7 @@ public class CalculatorUtils
         prepare(expression);
         Collections.reverse(postfixStack);// 将后缀式栈反转
         String firstValue, secondValue, currentValue;// 参与计算的第一个值，第二个值和算术运算符
-        while (!postfixStack.isEmpty()) {
+        while (!CollectionUtils.isEmpty(opStack)) {
             currentValue = postfixStack.pop();
             if (!isOperator(currentValue.charAt(0))) {// 如果不是运算符则存入操作数栈中
                 currentValue = currentValue.replace("~", "-");

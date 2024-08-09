@@ -57,6 +57,7 @@ import java.util.stream.Collectors;
 @RequestMapping("/filetransfer")
 public class FiletransferController
 {
+    private static final String CURRENT_MODULE = "文件传输接口";
 
     @Resource
     private IFiletransferService filetransferService;
@@ -71,8 +72,6 @@ public class FiletransferController
     private StorageService storageService;
     @Resource
     private UFOPFactory ufopFactory;
-
-    public static final String CURRENT_MODULE = "文件传输接口";
 
     @Operation(summary = "极速上传",
                description = "校验文件MD5判断文件是否存在，如果存在直接上传成功并返回skipUpload=true，如果不存在返回skipUpload=false需要再次调用该接口的POST方法",

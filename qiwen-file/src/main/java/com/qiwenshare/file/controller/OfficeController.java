@@ -2,9 +2,9 @@ package com.qiwenshare.file.controller;
 
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONObject;
+import com.qiwenshare.common.anno.MyLog;
 import com.qiwenshare.common.exception.NotLoginException;
 import com.qiwenshare.common.result.RestResult;
-import com.qiwenshare.common.util.security.JwtUser;
 import com.qiwenshare.common.util.security.SessionUtil;
 import com.qiwenshare.file.api.IFileService;
 import com.qiwenshare.file.api.IUserFileService;
@@ -15,7 +15,6 @@ import com.qiwenshare.file.domain.UserFile;
 import com.qiwenshare.file.domain.user.UserBean;
 import com.qiwenshare.file.dto.file.EditOfficeFileDTO;
 import com.qiwenshare.file.dto.file.PreviewOfficeFileDTO;
-import com.qiwenshare.file.office.documentserver.managers.history.HistoryManager;
 import com.qiwenshare.file.office.documentserver.models.enums.Action;
 import com.qiwenshare.file.office.documentserver.models.enums.Type;
 import com.qiwenshare.file.office.documentserver.models.filemodel.FileModel;
@@ -45,8 +44,8 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.text.MessageFormat;
 import java.util.Locale;
-import java.util.Objects;
 import java.util.Scanner;
 
 @Tag(name = "office",
@@ -56,7 +55,8 @@ import java.util.Scanner;
 @RequestMapping({"/office"})
 public class OfficeController
 {
-    public static final String CURRENT_MODULE = "Onlyoffice文件操作接口";
+    private static final String CURRENT_MODULE = "Onlyoffice文件操作接口";
+
     @Resource
     private IUserService userService;
     @Resource
@@ -79,12 +79,12 @@ public class OfficeController
     private FileConfigurer<DefaultFileWrapper> fileConfigurer;
 
     @Resource
-    IFileService fileService;
+    private IFileService fileService;
     @Resource
-    IUserFileService userFileService;
-    @Autowired
-    private HistoryManager historyManager;
+    private IUserFileService userFileService;
 
+    @MyLog(operation = "预览office文件",
+           module = CURRENT_MODULE)
     @Operation(summary = "预览office文件",
                description = "预览office文件",
                tags = {"office"})
@@ -95,47 +95,44 @@ public class OfficeController
                                                 @RequestBody
                                                         PreviewOfficeFileDTO previewOfficeFileDTO) {
         RestResult<Object> result = new RestResult<>();
+        String previewUrl = MessageFormat.format("{0}://{1}:{2}/filetransfer/preview?userFileId={3}&isMin={4}&shareBatchNum={5}&extractionCode={6}&token={7}", request.getScheme(),
+                deploymentHost, port, previewOfficeFileDTO.getUserFileId(), false, "undefined", "undefined", request.getHeader("token"));
         try {
-            String token = request.getHeader("token");
-            String previewUrl =
-                    request.getScheme() + "://" + deploymentHost + ":" + port + "/filetransfer/preview?userFileId=" + previewOfficeFileDTO.getUserFileId() + "&isMin" + "=false" +
-                            "&shareBatchNum=undefined&extractionCode=undefined&token=" + token;
-            JwtUser loginUser = SessionUtil.getSession();
+            // 获取用户文件信息
             UserFile userFile = userFileService.getById(previewOfficeFileDTO.getUserFileId());
-
-            UserBean userBean = userService.getById(loginUser.getUserId());
-            User user = new User(userBean);
-
-            Action action = Action.view;
-            Type type = Type.desktop;
-            Locale locale = new Locale("zh");
+            // 获取用户信息
+            UserBean userBean = userService.getById(SessionUtil.getUserId());
+            // 获取文件信息
             FileModel fileModel = fileConfigurer.getFileModel(DefaultFileWrapper
                     .builder()
                     .userFile(userFile)
-                    .type(type)
-                    .lang(locale.toLanguageTag())
-                    .action(action)
-                    .user(user)
+                    .type(Type.desktop)
+                    .lang(new Locale("zh").toLanguageTag())
+                    .action(Action.view)
+                    .user(new User(userBean))
                     .actionData(previewUrl)
                     .build());
 
+            // 封装文件信息
             JSONObject jsonObject = new JSONObject();
             jsonObject.put("file", fileModel);
             //            jsonObject.put("fileHistory", historyManager.getHistory(fileModel.getDocument()));  // get file history and add it to the model
-            jsonObject.put("docserviceApiUrl", docserviceSite + docserviceApiUrl);
+            jsonObject.put("docserviceApiUrl", docserviceSite.concat(docserviceApiUrl));
             jsonObject.put("reportName", userFile.getFileName());
             result.setData(jsonObject);
-            result.setCode(200);
+            result.setCode(HttpServletResponse.SC_OK);
             result.setMessage("获取报告成功！");
         }
         catch (Exception e) {
             log.error(e.getMessage());
-            result.setCode(500);
+            result.setCode(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             result.setMessage("服务器错误！");
         }
         return result;
     }
 
+    @MyLog(operation = "编辑office文件",
+           module = CURRENT_MODULE)
     @Operation(summary = "编辑office文件",
                description = "编辑office文件",
                tags = {"office"})
@@ -146,41 +143,37 @@ public class OfficeController
                                              @RequestBody
                                                      EditOfficeFileDTO editOfficeFileDTO) {
         RestResult<Object> result = new RestResult<>();
-        String token = request.getHeader("token");
-        String previewUrl =
-                request.getScheme() + "://" + deploymentHost + ":" + port + "/filetransfer/preview?userFileId=" + editOfficeFileDTO.getUserFileId() + "&isMin=false" +
-                        "&shareBatchNum=undefined&extractionCode=undefined&token=" + token;
+        String previewUrl = MessageFormat.format("{0}://{1}:{2}/filetransfer/preview?userFileId={3}&isMin={4}&shareBatchNum={5}&extractionCode={6}&token={7}", request.getScheme(),
+                deploymentHost, port, editOfficeFileDTO.getUserFileId(), false, "undefined", "undefined", request.getHeader("token"));
         log.info("editOfficeFile");
         try {
-            JwtUser loginUser = SessionUtil.getSession();
+            // 获取用户文件信息
             UserFile userFile = userFileService.getById(editOfficeFileDTO.getUserFileId());
-
-            UserBean userBean = userService.getById(loginUser.getUserId());
-            User user = new User(userBean);
-
-            Action action = Action.edit;
-            Type type = Type.desktop;
-            Locale locale = new Locale("zh");
+            // 获取用户信息
+            UserBean userBean = userService.getById(SessionUtil.getUserId());
+            // 获取文件信息
             FileModel fileModel = fileConfigurer.getFileModel(DefaultFileWrapper
                     .builder()
                     .userFile(userFile)
-                    .type(type)
-                    .lang(locale.toLanguageTag())
-                    .action(action)
-                    .user(user)
+                    .type(Type.desktop)
+                    .lang(new Locale("zh").toLanguageTag())
+                    .action(Action.edit)
+                    .user(new User(userBean))
                     .actionData(previewUrl)
                     .build());
+
+            // 封装文件信息
             JSONObject jsonObject = new JSONObject();
             jsonObject.put("file", fileModel);
-            jsonObject.put("docserviceApiUrl", docserviceSite + docserviceApiUrl);
+            jsonObject.put("docserviceApiUrl", docserviceSite.concat(docserviceApiUrl));
             jsonObject.put("reportName", userFile.getFileName());
             result.setData(jsonObject);
-            result.setCode(200);
+            result.setCode(HttpServletResponse.SC_OK);
             result.setMessage("编辑报告成功！");
         }
         catch (Exception e) {
             log.error(e.getMessage());
-            result.setCode(500);
+            result.setCode(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             result.setMessage("服务器错误！");
         }
         return result;
@@ -190,8 +183,8 @@ public class OfficeController
                     method = RequestMethod.POST)
     @ResponseBody
     public void IndexServlet(HttpServletResponse response, HttpServletRequest request) throws IOException {
-        String token = request.getParameter("token");
-        String userId = userService.getUserIdByToken(token);
+        // 获取用户信息
+        String userId = userService.getUserIdByToken(request.getParameter("token"));
         if (StringUtils.isEmpty(userId)) {
             throw new NotLoginException();
         }
@@ -204,16 +197,15 @@ public class OfficeController
 
         JSONObject jsonObj = JSON.parseObject(body);
         log.info("===saveeditedfile:" + jsonObj.get("status"));
-        String status = Objects.nonNull(jsonObj) ?
-                        jsonObj
-                                .get("status")
-                                .toString() :
-                        "";
+        String status = jsonObj
+                .get("status")
+                .toString();
         if ("2".equals(status) || "6".equals(status)) {
             String type = request.getParameter("type");
             String downloadUri = (String) jsonObj.get("url");
 
-            if ("edit".equals(type)) { //修改报告
+            // 修改报告
+            if ("edit".equals(type)) {
                 String userFileId = request.getParameter("userFileId");
                 UserFile userFile = userFileService.getById(userFileId);
                 FileBean fileBean = fileService.getById(userFile.getFileId());
@@ -229,37 +221,37 @@ public class OfficeController
                 try {
                     InputStream stream = connection.getInputStream();
                     fileDealComp.saveFileInputStream(fileBean.getStorageType(), fileUrl, stream);
-
                 }
                 catch (Exception e) {
                     log.error(e.getMessage());
                 }
                 finally {
-
                     int fileLength = connection.getContentLength();
                     log.info("当前修改文件大小为：" + (long) fileLength);
 
+                    // 下载文件
                     DownloadFile downloadFile = new DownloadFile();
                     downloadFile.setFileUrl(fileBean.getFileUrl());
                     InputStream inputStream = ufopFactory
                             .getDownloader(fileBean.getStorageType())
                             .getInputStream(downloadFile);
-                    String md5Str = DigestUtils.md5Hex(inputStream);
 
+                    // 获取文件md5
+                    String md5Str = DigestUtils.md5Hex(inputStream);
                     fileService.updateFileDetail(userFile.getUserFileId(), md5Str, fileLength);
                     connection.disconnect();
                 }
             }
         }
 
-        if ("3".equals(status) || "7".equals(status)) {//不强制手动保存时为6,"6".equals(status)
+        //不强制手动保存时为6,"6".equals(status)
+        if ("3".equals(status) || "7".equals(status)) {
             log.debug("====保存失败:");
             writer.write("{\"error\":1}");
         }
         else {
             log.debug("状态为：0");
             writer.write("{\"error\":" + "0" + "}");
-
         }
     }
 

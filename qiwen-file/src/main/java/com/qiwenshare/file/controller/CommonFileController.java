@@ -41,7 +41,7 @@ import java.util.stream.Collectors;
 public class CommonFileController
 {
 
-    public static final String CURRENT_MODULE = "文件共享";
+    private static final String CURRENT_MODULE = "文件共享";
 
     @Resource
     private ICommonFileService commonFileService;

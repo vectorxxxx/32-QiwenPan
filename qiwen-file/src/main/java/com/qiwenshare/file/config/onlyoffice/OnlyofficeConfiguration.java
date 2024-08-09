@@ -61,7 +61,7 @@ public class OnlyofficeConfiguration
         storagePathBuilder.configure(StringUtils.isEmpty(storageAddress) ?
                                      null :
                                      storageAddress);
-        if (!verifyPerrOff.isEmpty()) {
+        if (StringUtils.isNotEmpty(verifyPerrOff)) {
             try {
                 if (verifyPerrOff.equals("true")) {
                     ssl.turnOffSslChecking(); //the certificate will be ignored
