@@ -43,7 +43,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Date;
@@ -63,15 +62,15 @@ public class FiletransferController
     private IFiletransferService filetransferService;
 
     @Resource
-    private  IFileService fileService;
+    private IFileService fileService;
     @Resource
-    private  IUserFileService userFileService;
+    private IUserFileService userFileService;
     @Resource
-    private   FileDealComp fileDealComp;
+    private FileDealComp fileDealComp;
     @Resource
-    private   StorageService storageService;
+    private StorageService storageService;
     @Resource
-    private  UFOPFactory ufopFactory;
+    private UFOPFactory ufopFactory;
 
     public static final String CURRENT_MODULE = "文件传输接口";
 
@@ -94,7 +93,6 @@ public class FiletransferController
         return RestResult
                 .<UploadFileVo>success()
                 .data(uploadFileVo);
-
     }
 
     @Operation(summary = "上传文件",
@@ -112,7 +110,6 @@ public class FiletransferController
         return RestResult
                 .<UploadFileVo>success()
                 .data(uploadFileVo);
-
     }
 
     @Operation(summary = "下载文件",
@@ -148,12 +145,7 @@ public class FiletransferController
             fileName = userFile.getFileName() + "." + userFile.getExtendName();
 
         }
-        try {
-            fileName = new String(fileName.getBytes("utf-8"), "ISO-8859-1");
-        }
-        catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        }
+        fileName = new String(fileName.getBytes(StandardCharsets.UTF_8), StandardCharsets.ISO_8859_1);
 
         httpServletResponse.addHeader("Content-Disposition", "attachment;fileName=" + fileName);// 设置文件名
 

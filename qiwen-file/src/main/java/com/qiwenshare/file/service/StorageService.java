@@ -21,72 +21,43 @@ import java.util.Objects;
 public class StorageService extends ServiceImpl<StorageMapper, StorageBean> implements IStorageService
 {
     @Resource
-    StorageMapper storageMapper;
+    private StorageMapper storageMapper;
     @Resource
-    SysParamMapper sysParamMapper;
+    private SysParamMapper sysParamMapper;
     @Resource
-    UserFileMapper userFileMapper;
+    private UserFileMapper userFileMapper;
 
     @Override
     public Long getTotalStorageSize(String userId) {
-        LambdaQueryWrapper<StorageBean> lambdaQueryWrapper = new LambdaQueryWrapper<>();
-        lambdaQueryWrapper.eq(StorageBean::getUserId, userId);
-
-        StorageBean storageBean = storageMapper.selectOne(lambdaQueryWrapper);
-        Long totalStorageSize = null;
-        if (Objects.isNull(storageBean) || Objects.isNull(storageBean.getTotalStorageSize())) {
-            LambdaQueryWrapper<SysParam> lambdaQueryWrapper1 = new LambdaQueryWrapper<>();
-            lambdaQueryWrapper1.eq(SysParam::getSysParamKey, "totalStorageSize");
-            SysParam sysParam = sysParamMapper.selectOne(lambdaQueryWrapper1);
+        // 获取用户总存储空间
+        StorageBean storageBean = storageMapper.selectOne(new LambdaQueryWrapper<StorageBean>().eq(StorageBean::getUserId, userId));
+        Long totalStorageSize = Objects
+                .requireNonNull(storageBean)
+                .getTotalStorageSize();
+        if (Objects.isNull(totalStorageSize)) {
+            SysParam sysParam = sysParamMapper.selectOne(new LambdaQueryWrapper<SysParam>().eq(SysParam::getSysParamKey, "totalStorageSize"));
             totalStorageSize = Long.parseLong(sysParam.getSysParamValue());
             storageBean = new StorageBean();
             storageBean.setUserId(userId);
             storageBean.setTotalStorageSize(totalStorageSize);
             storageMapper.insert(storageBean);
         }
-        else {
-            totalStorageSize = storageBean.getTotalStorageSize();
-        }
-
-        if (Objects.nonNull(totalStorageSize)) {
-            totalStorageSize = totalStorageSize * 1024 * 1024;
-        }
+        totalStorageSize *= 1024 * 1024;
         return totalStorageSize;
     }
 
     @Override
     public boolean checkStorage(String userId, Long fileSize) {
-        LambdaQueryWrapper<StorageBean> lambdaQueryWrapper = new LambdaQueryWrapper<>();
-        lambdaQueryWrapper.eq(StorageBean::getUserId, userId);
+        // 获取用户总存储空间
+        Long totalStorageSize = getTotalStorageSize(userId);
 
-        StorageBean storageBean = storageMapper.selectOne(lambdaQueryWrapper);
-        Long totalStorageSize = null;
-        if (Objects.isNull(storageBean) || Objects.isNull(storageBean.getTotalStorageSize())) {
-            LambdaQueryWrapper<SysParam> lambdaQueryWrapper1 = new LambdaQueryWrapper<>();
-            lambdaQueryWrapper1.eq(SysParam::getSysParamKey, "totalStorageSize");
-            SysParam sysParam = sysParamMapper.selectOne(lambdaQueryWrapper1);
-            totalStorageSize = Long.parseLong(sysParam.getSysParamValue());
-            storageBean = new StorageBean();
-            storageBean.setUserId(userId);
-            storageBean.setTotalStorageSize(totalStorageSize);
-            storageMapper.insert(storageBean);
-        }
-        else {
-            totalStorageSize = storageBean.getTotalStorageSize();
-        }
-
-        if (Objects.nonNull(totalStorageSize)) {
-            totalStorageSize = totalStorageSize * 1024 * 1024;
-        }
-
+        // 获取用户已使用存储空间
         Long storageSize = userFileMapper.selectStorageSizeByUserId(userId);
         if (Objects.isNull(storageSize)) {
             storageSize = 0L;
         }
-        if (storageSize + fileSize > totalStorageSize) {
-            return false;
-        }
-        return true;
 
+        // 判断用户存储空间是否足够
+        return storageSize + fileSize <= totalStorageSize;
     }
 }

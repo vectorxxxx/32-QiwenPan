@@ -145,23 +145,26 @@ public class FileDealComp
      * @param sessionUserId
      */
     public void restoreParentFilePath(QiwenFile qiwenFile, String sessionUserId) {
-
+        // 如果是文件，则获取父目录
         if (qiwenFile.isFile()) {
             qiwenFile = qiwenFile.getParentFile();
         }
-        while (StringUtils.isNotEmpty(qiwenFile.getParent())) {
-            String fileName = qiwenFile.getName();
-            String parentFilePath = qiwenFile.getParent();
 
-            LambdaQueryWrapper<UserFile> lambdaQueryWrapper = new LambdaQueryWrapper<>();
-            lambdaQueryWrapper
+        // 循环判断父目录是否存在
+        while (StringUtils.isNotEmpty(qiwenFile.getParent())) {
+            final String fileName = qiwenFile.getName();
+            final String parentFilePath = qiwenFile.getParent();
+
+            // 根据文件路径和文件名查询用户文件
+            final List<UserFile> userFileList = userFileMapper.selectList(new LambdaQueryWrapper<UserFile>()
+                    .eq(UserFile::getUserId, sessionUserId)
                     .eq(UserFile::getFilePath, parentFilePath)
                     .eq(UserFile::getFileName, fileName)
                     .eq(UserFile::getDeleteFlag, FileDeleteFlagEnum.NOT_DELETED.getDeleteFlag())
-                    .eq(UserFile::getIsDir, 1)
-                    .eq(UserFile::getUserId, sessionUserId);
-            List<UserFile> userFileList = userFileMapper.selectList(lambdaQueryWrapper);
-            if (userFileList.size() == 0) {
+                    .eq(UserFile::getIsDir, FileDirEnum.DIR.getType()));
+
+            // 如果用户文件不存在，则插入
+            if (CollectionUtils.isEmpty(userFileList)) {
                 UserFile userFile = QiwenFileUtil.getQiwenDir(sessionUserId, parentFilePath, fileName);
                 try {
                     userFileMapper.insert(userFile);
@@ -293,13 +296,10 @@ public class FileDealComp
     public void uploadESByUserFileId(String userFileId) {
         exec.execute(() -> {
             try {
-
-                Map<String, Object> param = new HashMap<>();
-                param.put("userFileId", userFileId);
-                List<UserFile> userfileResult = userFileMapper.selectByMap(param);
-                if (CollectionUtils.isNotEmpty(userfileResult)) {
+                UserFile userfile = userFileMapper.selectOne(new LambdaQueryWrapper<UserFile>().eq(UserFile::getUserFileId, userFileId));
+                if (Objects.nonNull(userfile)) {
                     FileSearch fileSearch = new FileSearch();
-                    BeanUtil.copyProperties(userfileResult.get(0), fileSearch);
+                    BeanUtil.copyProperties(userfile, fileSearch);
                 /*if (fileSearch.getIsDir() == 0) {
 
                     Reader reader = ufopFactory.getReader(fileSearch.getStorageType());
@@ -320,7 +320,6 @@ public class FileDealComp
                 log.debug("ES更新操作失败，请检查配置");
             }
         });
-
     }
 
     public void deleteESByUserFileId(String userFileId) {
@@ -468,43 +467,60 @@ public class FileDealComp
         FileOutputStream fileOutputStream = null;
         try {
             if ("mp3".equalsIgnoreCase(extendName) || "flac".equalsIgnoreCase(extendName)) {
-                Downloader downloader = ufopFactory.getDownloader(storageType);
+                /** 通过下载器根据文件链接下载文件并保存为临时文件，并生成与之对应的Music对象。 **/
+                // 创建DownloadFile对象，用于配置下载的相关信息
                 DownloadFile downloadFile = new DownloadFile();
+                // 设置文件的下载链接
                 downloadFile.setFileUrl(fileUrl);
-                inputStream = downloader.getInputStream(downloadFile);
+                inputStream = ufopFactory
+                        // 根据存储类型获取下载器实例
+                        .getDownloader(storageType)
+                        // 通过下载器获取文件的输入流
+                        .getInputStream(downloadFile);
+                // 根据文件链接获取临时文件对象
                 outFile = UFOPUtils.getTempFile(fileUrl);
+                // 如果临时文件不存在，则创建新文件
                 if (!outFile.exists()) {
                     outFile.createNewFile();
                 }
+                // 创建文件输出流，用于将下载的文件内容写入到临时文件中
                 fileOutputStream = new FileOutputStream(outFile);
+                // 将输入流中的内容复制到输出流，完成文件下载
                 IOUtils.copy(inputStream, fileOutputStream);
-                Music music = new Music();
-                music.setMusicId(IdUtil.getSnowflakeNextIdStr());
-                music.setFileId(fileId);
+                // 创建Music对象，用于存储音乐相关信息
+                Music music = new Music()
+                        // 设置音乐ID，使用雪花算法生成的唯一ID
+                        .setMusicId(IdUtil.getSnowflakeNextIdStr())
+                        // 设置音乐对应的文件ID
+                        .setFileId(fileId);
 
-                Tag tag = null;
+                Tag tag;
                 AudioHeader audioHeader = null;
+                // 检查文件扩展名是否为mp3，以进行相应的处理
                 if ("mp3".equalsIgnoreCase(extendName)) {
+                    // 读取MP3文件以获取标签和音频信息
                     MP3File f = (MP3File) AudioFileIO.read(outFile);
                     tag = f.getTag();
                     audioHeader = f.getAudioHeader();
+                    // 检查是否存在ID3v2标签，如果存在，则尝试获取专辑封面
                     MP3File mp3file = new MP3File(outFile);
                     if (mp3file.hasID3v2Tag()) {
                         AbstractID3v2Tag id3v2Tag = mp3file.getID3v2TagAsv24();
                         AbstractID3v2Frame frame = (AbstractID3v2Frame) id3v2Tag.getFrame("APIC");
-                        FrameBodyAPIC body;
                         if (Objects.nonNull(frame) && !frame.isEmpty()) {
-                            body = (FrameBodyAPIC) frame.getBody();
+                            FrameBodyAPIC body = (FrameBodyAPIC) frame.getBody();
                             byte[] imageData = body.getImageData();
                             music.setAlbumImage(Base64
                                     .getEncoder()
                                     .encodeToString(imageData));
                         }
+                        // 设置MP3文件的元数据，如艺术家、标题、专辑等
                         if (Objects.nonNull(tag)) {
-                            music.setArtist(tag.getFirst(FieldKey.ARTIST));
-                            music.setTitle(tag.getFirst(FieldKey.TITLE));
-                            music.setAlbum(tag.getFirst(FieldKey.ALBUM));
-                            music.setYear(tag.getFirst(FieldKey.YEAR));
+                            music
+                                    .setArtist(tag.getFirst(FieldKey.ARTIST))
+                                    .setTitle(tag.getFirst(FieldKey.TITLE))
+                                    .setAlbum(tag.getFirst(FieldKey.ALBUM))
+                                    .setYear(tag.getFirst(FieldKey.YEAR));
                             try {
                                 music.setTrack(tag.getFirst(FieldKey.TRACK));
                             }
@@ -512,31 +528,36 @@ public class FileDealComp
                                 // ignore
                             }
 
-                            music.setGenre(tag.getFirst(FieldKey.GENRE));
-                            music.setComment(tag.getFirst(FieldKey.COMMENT));
-                            music.setLyrics(tag.getFirst(FieldKey.LYRICS));
-                            music.setComposer(tag.getFirst(FieldKey.COMPOSER));
-                            music.setAlbumArtist(tag.getFirst(FieldKey.ALBUM_ARTIST));
-                            music.setEncoder(tag.getFirst(FieldKey.ENCODER));
+                            music
+                                    .setGenre(tag.getFirst(FieldKey.GENRE))
+                                    .setComment(tag.getFirst(FieldKey.COMMENT))
+                                    .setLyrics(tag.getFirst(FieldKey.LYRICS))
+                                    .setComposer(tag.getFirst(FieldKey.COMPOSER))
+                                    .setAlbumArtist(tag.getFirst(FieldKey.ALBUM_ARTIST))
+                                    .setEncoder(tag.getFirst(FieldKey.ENCODER));
                         }
                     }
                 }
+                // 检查文件扩展名是否为flac，以进行相应的处理
                 else if ("flac".equalsIgnoreCase(extendName)) {
+                    // 读取FLAC文件以获取标签和音频信息
                     AudioFile f = new FlacFileReader().read(outFile);
                     tag = f.getTag();
                     audioHeader = f.getAudioHeader();
+                    // 设置FLAC文件的元数据，如艺术家、标题、专辑等，并处理专辑封面
                     if (Objects.nonNull(tag)) {
-                        music.setArtist(StringUtils.join(tag.getFields(FieldKey.ARTIST), ","));
-                        music.setTitle(StringUtils.join(tag.getFields(FieldKey.TITLE), ","));
-                        music.setAlbum(StringUtils.join(tag.getFields(FieldKey.ALBUM), ","));
-                        music.setYear(StringUtils.join(tag.getFields(FieldKey.YEAR), ","));
-                        music.setTrack(StringUtils.join(tag.getFields(FieldKey.TRACK), ","));
-                        music.setGenre(StringUtils.join(tag.getFields(FieldKey.GENRE), ","));
-                        music.setComment(StringUtils.join(tag.getFields(FieldKey.COMMENT), ","));
-                        music.setLyrics(StringUtils.join(tag.getFields(FieldKey.LYRICS), ","));
-                        music.setComposer(StringUtils.join(tag.getFields(FieldKey.COMPOSER), ","));
-                        music.setAlbumArtist(StringUtils.join(tag.getFields(FieldKey.ALBUM_ARTIST), ","));
-                        music.setEncoder(StringUtils.join(tag.getFields(FieldKey.ENCODER), ","));
+                        music
+                                .setArtist(StringUtils.join(tag.getFields(FieldKey.ARTIST), ","))
+                                .setTitle(StringUtils.join(tag.getFields(FieldKey.TITLE), ","))
+                                .setAlbum(StringUtils.join(tag.getFields(FieldKey.ALBUM), ","))
+                                .setYear(StringUtils.join(tag.getFields(FieldKey.YEAR), ","))
+                                .setTrack(StringUtils.join(tag.getFields(FieldKey.TRACK), ","))
+                                .setGenre(StringUtils.join(tag.getFields(FieldKey.GENRE), ","))
+                                .setComment(StringUtils.join(tag.getFields(FieldKey.COMMENT), ","))
+                                .setLyrics(StringUtils.join(tag.getFields(FieldKey.LYRICS), ","))
+                                .setComposer(StringUtils.join(tag.getFields(FieldKey.COMPOSER), ","))
+                                .setAlbumArtist(StringUtils.join(tag.getFields(FieldKey.ALBUM_ARTIST), ","))
+                                .setEncoder(StringUtils.join(tag.getFields(FieldKey.ENCODER), ","));
                         List<Artwork> artworkList = tag.getArtworkList();
                         if (CollectionUtils.isNotEmpty(artworkList)) {
                             Artwork artwork = artworkList.get(0);
@@ -555,7 +576,6 @@ public class FileDealComp
 
                 if (StringUtils.isEmpty(music.getLyrics())) {
                     try {
-
                         String lyc = MusicUtils.getLyc(music.getArtist(), music.getTitle(), music.getAlbum());
                         music.setLyrics(lyc);
                     }

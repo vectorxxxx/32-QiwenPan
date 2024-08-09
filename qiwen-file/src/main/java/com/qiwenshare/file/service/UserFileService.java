@@ -14,6 +14,7 @@ import com.qiwenshare.common.util.security.SessionUtil;
 import com.qiwenshare.file.api.IUserFileService;
 import com.qiwenshare.file.component.FileDealComp;
 import com.qiwenshare.file.constant.FileDeleteFlagEnum;
+import com.qiwenshare.file.constant.FileDirEnum;
 import com.qiwenshare.file.domain.RecoveryFile;
 import com.qiwenshare.file.domain.UserFile;
 import com.qiwenshare.file.dto.file.CreateFileDTO;
@@ -198,7 +199,7 @@ public class UserFileService extends ServiceImpl<UserFileMapper, UserFile> imple
         LambdaQueryWrapper<UserFile> lambdaQueryWrapper = new LambdaQueryWrapper<>();
         lambdaQueryWrapper
                 .eq(UserFile::getUserId, userId)
-                .eq(UserFile::getIsDir, 1)
+                .eq(UserFile::getIsDir, FileDirEnum.DIR.getType())
                 .eq(UserFile::getDeleteFlag, FileDeleteFlagEnum.NOT_DELETED.getDeleteFlag());
         return userFileMapper.selectList(lambdaQueryWrapper);
     }

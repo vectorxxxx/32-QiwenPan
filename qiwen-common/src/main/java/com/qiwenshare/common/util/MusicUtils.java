@@ -13,6 +13,14 @@ import java.util.Map;
 public class MusicUtils
 {
 
+    /**
+     * 根据输入的MP3名称和歌手名称，获取歌曲的歌词
+     *
+     * @param singerName 歌手姓名
+     * @param mp3Name    MP3 名称
+     * @param albumName  专辑名称
+     * @return {@link String }
+     */
     public static String getLyc(String singerName, String mp3Name, String albumName) {
         Map<String, Object> headMap = new HashMap<>();
         headMap.put("Referer", "https://y.qq.com/");
@@ -22,8 +30,7 @@ public class MusicUtils
         boolean isMatch = false;
         if (StringUtils.isNotEmpty(albumName)) {
             String s = HttpsUtils.doGetString(
-                    "https://c.y.qq.com/splcloud/fcgi-bin/smartbox_new.fcg?_=1655481018175&cv=4747474&ct=24&format=json&inCharset=utf-8&outCharset=utf-8&notice=0&platform=yqq" +
-                            ".json&needNewCode=1&uin=0&g_tk_new_20200303=5381&g_tk=5381&hostUin=0&is_xml=0&key=" + albumName,
+                    "https://c.y.qq.com/splcloud/fcgi-bin/smartbox_new.fcg?_=1655481018175&cv=4747474&ct=24&format=json&inCharset=utf-8&outCharset=utf-8&notice=0&platform=yqq" + ".json&needNewCode=1&uin=0&g_tk_new_20200303=5381&g_tk=5381&hostUin=0&is_xml=0&key=" + albumName,
                     headMap);
             Map map = JSON.parseObject(s, Map.class);
             Map data = (Map) map.get("data");
@@ -36,6 +43,8 @@ public class MusicUtils
                     mid = (String) item.get("mid");
                 }
             }
+
+            // 尝试从专辑信息中获取歌曲信息
             if (StringUtils.isNotEmpty(mid)) {
                 s = HttpsUtils.doGetString(
                         "https://c.y.qq.com/v8/fcg-bin/musicmall.fcg?_=1655481477830&cv=4747474&ct=24&format=json&inCharset=utf-8&outCharset=utf-8&notice=0&platform=yqq" +
@@ -57,10 +66,11 @@ public class MusicUtils
             }
 
         }
+
+        // 如果未从专辑信息中获取到，尝试从智能盒中获取歌曲信息
         if (!isMatch) {
             String s = HttpsUtils.doGetString(
-                    "https://c.y.qq.com/splcloud/fcgi-bin/smartbox_new.fcg?_=1651992748984&cv=4747474&ct=24&format=json&inCharset=utf-8&outCharset=utf-8&notice=0&platform=yqq" +
-                            ".json&needNewCode=1&uin=0&g_tk_new_20200303=5381&g_tk=5381&hostUin=0&is_xml=0&key=" + mp3Name.replaceAll(
+                    "https://c.y.qq.com/splcloud/fcgi-bin/smartbox_new.fcg?_=1651992748984&cv=4747474&ct=24&format=json&inCharset=utf-8&outCharset=utf-8&notice=0&platform=yqq" + ".json&needNewCode=1&uin=0&g_tk_new_20200303=5381&g_tk=5381&hostUin=0&is_xml=0&key=" + mp3Name.replaceAll(
                             " ", ""), headMap);
             Map map = JSON.parseObject(s, Map.class);
             Map data = (Map) map.get("data");
@@ -82,7 +92,6 @@ public class MusicUtils
                 catch (PinyinException e) {
                     e.printStackTrace();
                 }
-
             }
 
             if (!isMatch) {
@@ -101,7 +110,6 @@ public class MusicUtils
                     catch (PinyinException e) {
                         e.printStackTrace();
                     }
-
                 }
             }
 
@@ -115,8 +123,7 @@ public class MusicUtils
                     mid = (String) item.get("mid");
                     if (singer.equals(singerName) && mp3Name.equals(mp3name)) {
                         String res = HttpsUtils.doGetString(
-                                "https://c.y.qq.com/v8/fcg-bin/musicmall.fcg?_=1652026128283&cv=4747474&ct=24&format=json&inCharset=utf-8&outCharset=utf-8&notice=0&platform=yqq" +
-                                        ".json&needNewCode=1&uin=0&g_tk_new_20200303=5381&g_tk=5381&cmd=get_album_buy_page&albummid=" + mid + "&albumid=0",
+                                "https://c.y.qq.com/v8/fcg-bin/musicmall.fcg?_=1652026128283&cv=4747474&ct=24&format=json&inCharset=utf-8&outCharset=utf-8&notice=0&platform=yqq" + ".json&needNewCode=1&uin=0&g_tk_new_20200303=5381&g_tk=5381&cmd=get_album_buy_page&albummid=" + mid + "&albumid=0",
                                 headMap);
                         Map map1 = JSON.parseObject(res, Map.class);
                         Map data1 = (Map) map1.get("data");
@@ -138,8 +145,7 @@ public class MusicUtils
             }
         }
         String s1 = HttpsUtils.doGetString(
-                "https://c.y.qq.com/lyric/fcgi-bin/fcg_query_lyric_new.fcg?_=1651993218842&cv=4747474&ct=24&format=json&inCharset=utf-8&outCharset=utf-8&notice=0&platform=yqq" +
-                        ".json&needNewCode=1&uin=0&g_tk_new_20200303=5381&g_tk=5381&loginUin=0&" + "songmid=" + mid + "&" + "musicid=" + id,
+                "https://c.y.qq.com/lyric/fcgi-bin/fcg_query_lyric_new.fcg?_=1651993218842&cv=4747474&ct=24&format=json&inCharset=utf-8&outCharset=utf-8&notice=0&platform=yqq" + ".json&needNewCode=1&uin=0&g_tk_new_20200303=5381&g_tk=5381&loginUin=0&" + "songmid=" + mid + "&" + "musicid=" + id,
                 headMap);
         Map map1 = JSON.parseObject(s1, Map.class);
         return (String) map1.get("lyric");

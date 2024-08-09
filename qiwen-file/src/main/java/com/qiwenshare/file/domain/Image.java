@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
+import lombok.experimental.Accessors;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -22,6 +23,7 @@ import javax.persistence.Table;
 @Table(name = "image")
 @Entity
 @TableName("image")
+@Accessors(chain = true)
 public class Image
 {
     @Id
@@ -29,10 +31,13 @@ public class Image
     @TableId(type = IdType.AUTO)
     @Column(columnDefinition = "bigint(20)")
     private Long imageId;
+
     @Column(columnDefinition = "varchar(20) comment '文件id'")
     private String fileId;
+
     @Column(columnDefinition = "int(5) comment '图像的宽'")
     private Integer imageWidth;
+
     @Column(columnDefinition = "int(5) comment '图像的高'")
     private Integer imageHeight;
 }

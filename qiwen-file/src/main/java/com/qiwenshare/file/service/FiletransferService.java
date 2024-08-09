@@ -64,9 +64,7 @@ import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -81,113 +79,110 @@ import java.util.zip.ZipOutputStream;
 @Transactional(rollbackFor = Exception.class)
 public class FiletransferService implements IFiletransferService
 {
-
-    @Resource
-    FileMapper fileMapper;
-
-    @Resource
-    UserFileMapper userFileMapper;
-
-    @Resource
-    UFOPFactory ufopFactory;
-    @Resource
-    FileDealComp fileDealComp;
-    @Resource
-    UploadTaskDetailMapper uploadTaskDetailMapper;
-    @Resource
-    UploadTaskMapper uploadTaskMapper;
-    @Resource
-    ImageMapper imageMapper;
-
-    @Resource
-    PictureFileMapper pictureFileMapper;
     public static Executor exec = Executors.newFixedThreadPool(20);
+
+    @Resource
+    private FileMapper fileMapper;
+
+    @Resource
+    private UserFileMapper userFileMapper;
+
+    @Resource
+    private UFOPFactory ufopFactory;
+    @Resource
+    private FileDealComp fileDealComp;
+    @Resource
+    private UploadTaskDetailMapper uploadTaskDetailMapper;
+    @Resource
+    private UploadTaskMapper uploadTaskMapper;
+    @Resource
+    private ImageMapper imageMapper;
+
+    @Resource
+    private PictureFileMapper pictureFileMapper;
 
     @Override
     public UploadFileVo uploadFileSpeed(UploadFileDTO uploadFileDTO) {
         UploadFileVo uploadFileVo = new UploadFileVo();
-        Map<String, Object> param = new HashMap<>();
-        param.put("identifier", uploadFileDTO.getIdentifier());
-        List<FileBean> list = fileMapper.selectByMap(param);
 
-        String filePath = uploadFileDTO.getFilePath();
-        String relativePath = uploadFileDTO.getRelativePath();
-        QiwenFile qiwenFile = null;
-        if (relativePath.contains("/")) {
-            qiwenFile = new QiwenFile(filePath, relativePath, false);
-        }
-        else {
-            qiwenFile = new QiwenFile(filePath, uploadFileDTO.getFilename(), false);
-        }
+        final String userId = SessionUtil.getUserId();
+        final String filePath = uploadFileDTO.getFilePath();
+        final String relativePath = uploadFileDTO.getRelativePath();
+        QiwenFile qiwenFile = new QiwenFile(filePath, relativePath.contains("/") ?
+                                                      relativePath :
+                                                      uploadFileDTO.getFilename(), false);
 
-        if (CollectionUtils.isNotEmpty(list)) {
-            FileBean file = list.get(0);
-            UserFile userFile = new UserFile(qiwenFile, SessionUtil.getUserId(), file.getFileId());
+        // 根据md5唯一标识查询文件
+        final String identifier = uploadFileDTO.getIdentifier();
+        final FileBean fileBean = fileMapper.selectOne(new LambdaQueryWrapper<FileBean>().eq(FileBean::getIdentifier, identifier));
+        // 如果文件存在，则跳过上传
+        if (Objects.nonNull(fileBean)) {
+            UserFile userFile = new UserFile(qiwenFile, userId, fileBean.getFileId());
 
             try {
+                // 插入用户文件表
                 userFileMapper.insert(userFile);
+                // 更新 ES 索引
                 fileDealComp.uploadESByUserFileId(userFile.getUserFileId());
             }
             catch (Exception e) {
                 log.warn("极速上传文件冲突重命名处理: {}", JSON.toJSONString(userFile));
-
             }
 
             if (relativePath.contains("/")) {
-                QiwenFile finalQiwenFile = qiwenFile;
-                exec.execute(() -> {
-                    fileDealComp.restoreParentFilePath(finalQiwenFile, SessionUtil.getUserId());
-                });
-
+                exec.execute(() -> fileDealComp.restoreParentFilePath(qiwenFile, userId));
             }
-
             uploadFileVo.setSkipUpload(true);
         }
+        // 如果文件不存在，则上传
         else {
             uploadFileVo.setSkipUpload(false);
 
-            List<Integer> uploaded = uploadTaskDetailMapper.selectUploadedChunkNumList(uploadFileDTO.getIdentifier());
+            // 查询已上传的分片
+            List<Integer> uploaded = uploadTaskDetailMapper.selectUploadedChunkNumList(identifier);
+            // 如果已上传分片不为空，则设置已上传分片
             if (CollectionUtils.isNotEmpty(uploaded)) {
                 uploadFileVo.setUploaded(uploaded);
             }
+            // 如果已上传分片为空，则插入上传任务表
             else {
-
-                LambdaQueryWrapper<UploadTask> lambdaQueryWrapper = new LambdaQueryWrapper<>();
-                lambdaQueryWrapper.eq(UploadTask::getIdentifier, uploadFileDTO.getIdentifier());
-                List<UploadTask> rslist = uploadTaskMapper.selectList(lambdaQueryWrapper);
+                List<UploadTask> rslist = uploadTaskMapper.selectList(new LambdaQueryWrapper<UploadTask>().eq(UploadTask::getIdentifier, identifier));
                 if (CollectionUtils.isEmpty(rslist)) {
-                    UploadTask uploadTask = new UploadTask();
-                    uploadTask.setIdentifier(uploadFileDTO.getIdentifier());
-                    uploadTask.setUploadTime(DateUtil.getCurrentTime());
-                    uploadTask.setUploadStatus(UploadFileStatusEnum.UNCOMPLATE.getCode());
-                    uploadTask.setFileName(qiwenFile.getNameNotExtend());
-                    uploadTask.setFilePath(qiwenFile.getParent());
-                    uploadTask.setExtendName(qiwenFile.getExtendName());
-                    uploadTask.setUserId(SessionUtil.getUserId());
-                    uploadTaskMapper.insert(uploadTask);
+                    uploadTaskMapper.insert(new UploadTask()
+                            .setIdentifier(identifier)
+                            .setUserId(userId)
+                            .setFileName(qiwenFile.getNameNotExtend())
+                            .setFilePath(qiwenFile.getParent())
+                            .setExtendName(qiwenFile.getExtendName())
+                            .setUploadTime(DateUtil.getCurrentTime())
+                            .setUploadStatus(UploadFileStatusEnum.UNCOMPLATE.getCode()));
                 }
             }
-
         }
         return uploadFileVo;
     }
 
     @Override
     public void uploadFile(HttpServletRequest request, UploadFileDTO uploadFileDto, String userId) {
+        final String identifier = uploadFileDto.getIdentifier();
 
+        // 封装上传文件对象
         UploadFile uploadFile = new UploadFile();
-        uploadFile.setChunkNumber(uploadFileDto.getChunkNumber());
-        uploadFile.setChunkSize(uploadFileDto.getChunkSize());
-        uploadFile.setTotalChunks(uploadFileDto.getTotalChunks());
-        uploadFile.setIdentifier(uploadFileDto.getIdentifier());
-        uploadFile.setTotalSize(uploadFileDto.getTotalSize());
-        uploadFile.setCurrentChunkSize(uploadFileDto.getCurrentChunkSize());
+        uploadFile.setChunkNumber(uploadFileDto.getChunkNumber());  // 当前分片
+        uploadFile.setChunkSize(uploadFileDto.getChunkSize());      // 分片大小
+        uploadFile.setTotalChunks(uploadFileDto.getTotalChunks());  // 分片总数
+        uploadFile.setIdentifier(identifier);    // md5
+        uploadFile.setTotalSize(uploadFileDto.getTotalSize());      // 文件大小
+        uploadFile.setCurrentChunkSize(uploadFileDto.getCurrentChunkSize());    // 当前分片大小
 
+        // 获取上传器
         Uploader uploader = ufopFactory.getUploader();
         if (Objects.isNull(uploader)) {
             log.error("上传失败，请检查storageType是否配置正确");
             throw new UploadException("上传失败");
         }
+
+        // 上传文件
         List<UploadFileResult> uploadFileResultList;
         try {
             uploadFileResultList = uploader.upload(request, uploadFile);
@@ -196,38 +191,35 @@ public class FiletransferService implements IFiletransferService
             log.error("上传失败，请检查UFOP连接配置是否正确");
             throw new UploadException("上传失败", e);
         }
-        for (int i = 0; i < uploadFileResultList.size(); i++) {
-            UploadFileResult uploadFileResult = uploadFileResultList.get(i);
-            String relativePath = uploadFileDto.getRelativePath();
-            QiwenFile qiwenFile = null;
-            if (relativePath.contains("/")) {
-                qiwenFile = new QiwenFile(uploadFileDto.getFilePath(), relativePath, false);
-            }
-            else {
-                qiwenFile = new QiwenFile(uploadFileDto.getFilePath(), uploadFileDto.getFilename(), false);
-            }
 
+        // 遍历上传结果
+        for (UploadFileResult uploadFileResult : uploadFileResultList) {
+            String relativePath = uploadFileDto.getRelativePath();
+            QiwenFile qiwenFile = new QiwenFile(uploadFileDto.getFilePath(), relativePath.contains("/") ?
+                                                                             relativePath :
+                                                                             uploadFileDto.getFilename(), false);
+
+            // 1、上传成功
             if (UploadFileStatusEnum.SUCCESS.equals(uploadFileResult.getStatus())) {
+                // 插入文件表
                 FileBean fileBean = new FileBean(uploadFileResult).setCreateUserId(userId);
+                final String fileBeanIdentifier = fileBean.getIdentifier();
                 try {
                     fileMapper.insert(fileBean);
                 }
                 catch (Exception e) {
-                    log.warn("identifier Duplicate: {}", fileBean.getIdentifier());
-                    fileBean = fileMapper.selectOne(new QueryWrapper<FileBean>()
-                            .lambda()
-                            .eq(FileBean::getIdentifier, fileBean.getIdentifier()));
+                    log.warn("identifier Duplicate: {}", fileBeanIdentifier);
+                    fileBean = fileMapper.selectOne(new LambdaQueryWrapper<FileBean>().eq(FileBean::getIdentifier, fileBeanIdentifier));
                 }
 
+                // 插入用户文件表，更新索引
                 UserFile userFile = new UserFile(qiwenFile, userId, fileBean.getFileId());
-
                 try {
                     userFileMapper.insert(userFile);
                     fileDealComp.uploadESByUserFileId(userFile.getUserFileId());
                 }
                 catch (Exception e) {
-                    UserFile userFile1 = userFileMapper.selectOne(new QueryWrapper<UserFile>()
-                            .lambda()
+                    UserFile userFile1 = userFileMapper.selectOne(new LambdaQueryWrapper<UserFile>()
                             .eq(UserFile::getUserId, userFile.getUserId())
                             .eq(UserFile::getFilePath, userFile.getFilePath())
                             .eq(UserFile::getFileName, userFile.getFileName())
@@ -235,7 +227,7 @@ public class FiletransferService implements IFiletransferService
                             .eq(UserFile::getDeleteFlag, userFile.getDeleteFlag())
                             .eq(UserFile::getIsDir, userFile.getIsDir()));
                     FileBean file1 = fileMapper.selectById(userFile1.getFileId());
-                    if (!StringUtils.equals(fileBean.getIdentifier(), file1.getIdentifier())) {
+                    if (!StringUtils.equals(fileBeanIdentifier, file1.getIdentifier())) {
                         log.warn("文件冲突重命名处理: {}", JSON.toJSONString(userFile1));
                         String fileName = fileDealComp.getRepeatFileName(userFile, userFile.getFilePath());
                         userFile.setFileName(fileName);
@@ -244,66 +236,56 @@ public class FiletransferService implements IFiletransferService
                     }
                 }
 
+                // 创建父级目录
                 if (relativePath.contains("/")) {
-                    QiwenFile finalQiwenFile = qiwenFile;
-                    exec.execute(() -> {
-                        fileDealComp.restoreParentFilePath(finalQiwenFile, userId);
-                    });
-
+                    exec.execute(() -> fileDealComp.restoreParentFilePath(qiwenFile, userId));
                 }
 
-                LambdaQueryWrapper<UploadTaskDetail> lambdaQueryWrapper = new LambdaQueryWrapper<>();
-                lambdaQueryWrapper.eq(UploadTaskDetail::getIdentifier, uploadFileDto.getIdentifier());
-                uploadTaskDetailMapper.delete(lambdaQueryWrapper);
-
-                LambdaUpdateWrapper<UploadTask> lambdaUpdateWrapper = new LambdaUpdateWrapper<>();
-                lambdaUpdateWrapper
+                // 更新上传任务状态
+                uploadTaskDetailMapper.delete(new LambdaQueryWrapper<UploadTaskDetail>().eq(UploadTaskDetail::getIdentifier, identifier));
+                uploadTaskMapper.update(null, new LambdaUpdateWrapper<UploadTask>()
                         .set(UploadTask::getUploadStatus, UploadFileStatusEnum.SUCCESS.getCode())
-                        .eq(UploadTask::getIdentifier, uploadFileDto.getIdentifier());
-                uploadTaskMapper.update(null, lambdaUpdateWrapper);
+                        .eq(UploadTask::getIdentifier, identifier));
 
+                // 生成缩略图
                 try {
                     if (UFOPUtils.isImageFile(uploadFileResult.getExtendName())) {
                         BufferedImage src = uploadFileResult.getBufferedImage();
-                        Image image = new Image();
-                        image.setImageWidth(src.getWidth());
-                        image.setImageHeight(src.getHeight());
-                        image.setFileId(fileBean.getFileId());
-                        imageMapper.insert(image);
+                        imageMapper.insert(new Image()
+                                .setImageWidth(src.getWidth())
+                                .setImageHeight(src.getHeight())
+                                .setFileId(fileBean.getFileId()));
                     }
                 }
                 catch (Exception e) {
                     log.error("生成图片缩略图失败！", e);
                 }
 
+                // 解析音乐文件
                 fileDealComp.parseMusicFile(uploadFileResult.getExtendName(), uploadFileResult
                         .getStorageType()
                         .getCode(), uploadFileResult.getFileUrl(), fileBean.getFileId());
-
             }
+            // 2、未完成上传
             else if (UploadFileStatusEnum.UNCOMPLATE.equals(uploadFileResult.getStatus())) {
-                UploadTaskDetail uploadTaskDetail = new UploadTaskDetail();
-                uploadTaskDetail.setFilePath(qiwenFile.getParent());
-                uploadTaskDetail.setFilename(qiwenFile.getNameNotExtend());
-                uploadTaskDetail.setChunkNumber(uploadFileDto.getChunkNumber());
-                uploadTaskDetail.setChunkSize((int) uploadFileDto.getChunkSize());
-                uploadTaskDetail.setRelativePath(uploadFileDto.getRelativePath());
-                uploadTaskDetail.setTotalChunks(uploadFileDto.getTotalChunks());
-                uploadTaskDetail.setTotalSize((int) uploadFileDto.getTotalSize());
-                uploadTaskDetail.setIdentifier(uploadFileDto.getIdentifier());
-                uploadTaskDetailMapper.insert(uploadTaskDetail);
-
+                // 插入上传任务详情
+                uploadTaskDetailMapper.insert(new UploadTaskDetail()
+                        .setFilePath(qiwenFile.getParent())
+                        .setFilename(qiwenFile.getNameNotExtend())
+                        .setChunkNumber(uploadFileDto.getChunkNumber())
+                        .setChunkSize((int) uploadFileDto.getChunkSize())
+                        .setRelativePath(uploadFileDto.getRelativePath())
+                        .setTotalChunks(uploadFileDto.getTotalChunks())
+                        .setTotalSize((int) uploadFileDto.getTotalSize())
+                        .setIdentifier(identifier));
             }
+            // 3、上传失败
             else if (UploadFileStatusEnum.FAIL.equals(uploadFileResult.getStatus())) {
-                LambdaQueryWrapper<UploadTaskDetail> lambdaQueryWrapper = new LambdaQueryWrapper<>();
-                lambdaQueryWrapper.eq(UploadTaskDetail::getIdentifier, uploadFileDto.getIdentifier());
-                uploadTaskDetailMapper.delete(lambdaQueryWrapper);
-
-                LambdaUpdateWrapper<UploadTask> lambdaUpdateWrapper = new LambdaUpdateWrapper<>();
-                lambdaUpdateWrapper
+                // 更新上传任务状态
+                uploadTaskDetailMapper.delete(new LambdaQueryWrapper<UploadTaskDetail>().eq(UploadTaskDetail::getIdentifier, identifier));
+                uploadTaskMapper.update(null, new LambdaUpdateWrapper<UploadTask>()
                         .set(UploadTask::getUploadStatus, UploadFileStatusEnum.FAIL.getCode())
-                        .eq(UploadTask::getIdentifier, uploadFileDto.getIdentifier());
-                uploadTaskMapper.update(null, lambdaUpdateWrapper);
+                        .eq(UploadTask::getIdentifier, identifier));
             }
         }
 
