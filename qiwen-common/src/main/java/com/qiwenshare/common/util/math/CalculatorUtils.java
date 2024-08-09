@@ -1,13 +1,18 @@
 package com.qiwenshare.common.util.math;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.CollectionUtils;
 
 import java.util.Collections;
 import java.util.Stack;
 
 /**
- * 算数表达式求值 直接调用Calculator的类方法conversion() 传入算数表达式，将返回一个浮点值结果 如果计算过程错误，将返回一个NaN
+ * @author VectorX
+ * @version 1.0.0
+ * @description 算数表达式求值 直接调用Calculator的类方法conversion() 传入算数表达式，将返回一个浮点值结果 如果计算过程错误，将返回一个NaN
+ * @date 2024/08/09
  */
+@Slf4j
 public class CalculatorUtils
 {
     private Stack<String> postfixStack = new Stack<String>();// 后缀式栈
@@ -16,16 +21,16 @@ public class CalculatorUtils
 
     public static double conversion(String expression) {
         expression = expression.replaceAll(" ", "");
-        double result = 0;
+        double result = 0.0D;
         CalculatorUtils cal = new CalculatorUtils();
         try {
             expression = transform(expression);
             result = cal.calculate(expression);
         }
         catch (Exception e) {
-            // e.printStackTrace();
+            log.error("运算出错：{}", e.getMessage(), e);
             // 运算错误返回NaN
-            return 0.0 / 0.0;
+            return Double.NaN;
         }
         // return new String().valueOf(result);
         return result;
@@ -72,7 +77,7 @@ public class CalculatorUtils
         prepare(expression);
         Collections.reverse(postfixStack);// 将后缀式栈反转
         String firstValue, secondValue, currentValue;// 参与计算的第一个值，第二个值和算术运算符
-        while (!CollectionUtils.isEmpty(opStack)) {
+        while (!CollectionUtils.isEmpty(postfixStack)) {
             currentValue = postfixStack.pop();
             if (!isOperator(currentValue.charAt(0))) {// 如果不是运算符则存入操作数栈中
                 currentValue = currentValue.replace("~", "-");
@@ -90,7 +95,7 @@ public class CalculatorUtils
                 resultStack.push(tempResult);
             }
         }
-        return Double.valueOf(resultStack.pop());
+        return Double.parseDouble(resultStack.pop());
     }
 
     /**

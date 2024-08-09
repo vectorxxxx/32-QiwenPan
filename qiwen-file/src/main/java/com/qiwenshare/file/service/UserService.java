@@ -47,7 +47,6 @@ public class UserService extends ServiceImpl<UserMapper, UserBean> implements IU
 
     @Override
     public String getUserIdByToken(String token) {
-        Claims claims;
         if (StringUtils.isEmpty(token)) {
             return null;
         }
@@ -58,11 +57,12 @@ public class UserService extends ServiceImpl<UserMapper, UserBean> implements IU
                 .replace("Bearer%20", "");
 
         // 解码
+        Claims claims;
         try {
             claims = jwtComp.parseJWT(token);
         }
         catch (Exception e) {
-            log.error("解码异常:" + e);
+            log.error("解码异常：{}", e.getMessage(), e);
             return null;
         }
         if (Objects.isNull(claims)) {
