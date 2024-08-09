@@ -9,6 +9,7 @@ import java.io.FileNotFoundException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Date;
 
 public class UFOPUtils
@@ -36,12 +37,9 @@ public class UFOPUtils
      * @return 是否为图片文件
      */
     public static boolean isImageFile(String extendName) {
-        for (String extend : IMG_FILE) {
-            if (extendName.equalsIgnoreCase(extend)) {
-                return true;
-            }
-        }
-        return false;
+        return Arrays
+                .stream(IMG_FILE)
+                .anyMatch(extendName::equalsIgnoreCase);
     }
 
     /**
@@ -51,12 +49,9 @@ public class UFOPUtils
      * @return 是否为视频文件
      */
     public static boolean isVideoFile(String extendName) {
-        for (String extend : VIDEO_FILE) {
-            if (extendName.equalsIgnoreCase(extend)) {
-                return true;
-            }
-        }
-        return false;
+        return Arrays
+                .stream(VIDEO_FILE)
+                .anyMatch(extendName::equalsIgnoreCase);
     }
 
     public static String pathSplitFormat(String filePath) {

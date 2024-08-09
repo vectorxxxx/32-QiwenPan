@@ -45,6 +45,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
@@ -120,34 +121,48 @@ public class FiletransferController
     @RequestMapping(value = "/downloadfile",
                     method = RequestMethod.GET)
     public void downloadFile(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, DownloadFileDTO downloadFileDTO) {
+        // 获取请求中的所有Cookie
         Cookie[] cookieArr = httpServletRequest.getCookies();
         String token = "";
         if (ArrayUtils.isNotEmpty(cookieArr)) {
-            for (Cookie cookie : cookieArr) {
-                if ("token".equals(cookie.getName())) {
-                    token = cookie.getValue();
-                }
-            }
+            // 从Cookie数组中查找名为"token"的Cookie
+            token = Arrays
+                    .stream(cookieArr)
+                    .filter(cookie -> "token".equals(cookie.getName()))
+                    .map(Cookie::getValue)
+                    .findFirst()
+                    .orElse("");
         }
+        // 判断是否有下载权限
         boolean authResult = fileDealComp.checkAuthDownloadAndPreview(downloadFileDTO.getShareBatchNum(), downloadFileDTO.getExtractionCode(), token,
                 downloadFileDTO.getUserFileId(), null);
         if (!authResult) {
             log.error("没有权限下载！！！");
             return;
         }
-        httpServletResponse.setContentType("application/force-download");// 设置强制下载不打开
+
+        // 获取用户文件信息
         UserFile userFile = userFileService.getById(downloadFileDTO.getUserFileId());
+        // 获取文件名
         String fileName = "";
         if (userFile.isDirectory()) {
-            fileName = userFile.getFileName() + ".zip";
+            fileName = userFile
+                    .getFileName()
+                    .concat(".zip");
         }
         else {
-            fileName = userFile.getFileName() + "." + userFile.getExtendName();
-
+            fileName = userFile
+                    .getFileName()
+                    .concat(".")
+                    .concat(userFile.getExtendName());
         }
         fileName = new String(fileName.getBytes(StandardCharsets.UTF_8), StandardCharsets.ISO_8859_1);
 
-        httpServletResponse.addHeader("Content-Disposition", "attachment;fileName=" + fileName);// 设置文件名
+        // 设置内容类型、响应头
+        // 设置强制下载不打开
+        httpServletResponse.setContentType("application/force-download");
+        // 设置文件名
+        httpServletResponse.addHeader("Content-Disposition", "attachment;fileName=".concat(fileName));
 
         filetransferService.downloadFile(httpServletResponse, downloadFileDTO);
     }
@@ -164,12 +179,16 @@ public class FiletransferController
         Cookie[] cookieArr = httpServletRequest.getCookies();
         String token = "";
         if (ArrayUtils.isNotEmpty(cookieArr)) {
-            for (Cookie cookie : cookieArr) {
-                if ("token".equals(cookie.getName())) {
-                    token = cookie.getValue();
-                }
-            }
+            // 从Cookie数组中查找名为"token"的Cookie
+            token = Arrays
+                    .stream(cookieArr)
+                    .filter(cookie -> "token".equals(cookie.getName()))
+                    .map(Cookie::getValue)
+                    .findFirst()
+                    .orElse("");
         }
+
+        // 判断是否有下载权限
         boolean authResult = fileDealComp.checkAuthDownloadAndPreview(batchDownloadFileDTO.getShareBatchNum(), batchDownloadFileDTO.getExtractionCode(), token,
                 batchDownloadFileDTO.getUserFileIds(), null);
         if (!authResult) {
@@ -181,14 +200,18 @@ public class FiletransferController
         String[] userFileIdStrs = files.split(",");
         List<String> userFileIds = new ArrayList<>();
         for (String userFileId : userFileIdStrs) {
+            // 获取用户文件信息
             UserFile userFile = userFileService.getById(userFileId);
+            // 1、文件
             if (userFile.isFile()) {
                 userFileIds.add(userFileId);
             }
+            // 2、文件夹
             else {
+                // 获取文件夹下的所有文件
                 QiwenFile qiwenFile = new QiwenFile(userFile.getFilePath(), userFile.getFileName(), true);
-                List<UserFile> userFileList = userFileService.selectUserFileByLikeRightFilePath(qiwenFile.getPath(), userFile.getUserId());
-                List<String> userFileIds1 = userFileList
+                List<String> userFileIds1 = userFileService
+                        .selectUserFileByLikeRightFilePath(qiwenFile.getPath(), userFile.getUserId())
                         .stream()
                         .map(UserFile::getUserFileId)
                         .collect(Collectors.toList());
@@ -197,11 +220,16 @@ public class FiletransferController
             }
 
         }
+
         UserFile userFile = userFileService.getById(userFileIdStrs[0]);
-        httpServletResponse.setContentType("application/force-download");// 设置强制下载不打开
         Date date = new Date();
         String fileName = String.valueOf(date.getTime());
-        httpServletResponse.addHeader("Content-Disposition", "attachment;fileName=" + fileName + ".zip");// 设置文件名
+
+        // 设置内容类型、响应头
+        httpServletResponse.setContentType("application/force-download");// 设置强制下载不打开
+        httpServletResponse.addHeader("Content-Disposition", "attachment;fileName="
+                .concat(fileName)
+                .concat(".zip"));// 设置文件名
         filetransferService.downloadUserFileList(httpServletResponse, userFile.getFilePath(), fileName, userFileIds);
     }
 
@@ -210,11 +238,13 @@ public class FiletransferController
                tags = {"filetransfer"})
     @GetMapping("/preview")
     public void preview(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, PreviewDTO previewDTO) throws IOException {
-
+        // 图片预览
         if (Objects.nonNull(previewDTO.getPlatform()) && previewDTO.getPlatform() == 2) {
             filetransferService.previewPictureFile(httpServletResponse, previewDTO);
             return;
         }
+
+        // 获取token
         String token = "";
         if (StringUtils.isNotEmpty(previewDTO.getToken())) {
             token = previewDTO.getToken();
@@ -222,34 +252,41 @@ public class FiletransferController
         else {
             Cookie[] cookieArr = httpServletRequest.getCookies();
             if (ArrayUtils.isNotEmpty(cookieArr)) {
-                for (Cookie cookie : cookieArr) {
-                    if ("token".equals(cookie.getName())) {
-                        token = cookie.getValue();
-                    }
-                }
+                // 从Cookie数组中查找名为"token"的Cookie
+                token = Arrays
+                        .stream(cookieArr)
+                        .filter(cookie -> "token".equals(cookie.getName()))
+                        .map(Cookie::getValue)
+                        .findFirst()
+                        .orElse("");
             }
         }
 
+        // 判断是否有下载权限
         UserFile userFile = userFileService.getById(previewDTO.getUserFileId());
         boolean authResult = fileDealComp.checkAuthDownloadAndPreview(previewDTO.getShareBatchNum(), previewDTO.getExtractionCode(), token, previewDTO.getUserFileId(),
                 previewDTO.getPlatform());
-
         if (!authResult) {
             log.error("没有权限预览！！！");
             return;
         }
 
-        String fileName = userFile.getFileName() + "." + userFile.getExtendName();
+        // 设置响应头：文件名、文件类型、缓存控制
+        String fileName = userFile
+                .getFileName()
+                .concat(".")
+                .concat(userFile.getExtendName());
         fileName = new String(fileName.getBytes(StandardCharsets.UTF_8), StandardCharsets.ISO_8859_1);
-
-        httpServletResponse.addHeader("Content-Disposition", "fileName=" + fileName);// 设置文件名
         String mime = MimeUtils.getMime(userFile.getExtendName());
+        httpServletResponse.addHeader("Content-Disposition", "fileName=".concat(fileName));// 设置文件名
         httpServletResponse.setHeader("Content-Type", mime);
         if (UFOPUtils.isImageFile(userFile.getExtendName())) {
             httpServletResponse.setHeader("cache-control", "public");
         }
 
+        // 获取文件信息
         FileBean fileBean = fileService.getById(userFile.getFileId());
+        // 视频、音频、flac
         if (UFOPUtils.isVideoFile(userFile.getExtendName()) || "mp3".equalsIgnoreCase(userFile.getExtendName()) || "flac".equalsIgnoreCase(userFile.getExtendName())) {
             //获取从那个字节开始读取文件
             String rangeString = httpServletRequest.getHeader("Range");
@@ -258,12 +295,13 @@ public class FiletransferController
                 start = Integer.parseInt(rangeString.substring(rangeString.indexOf("=") + 1, rangeString.indexOf("-")));
             }
 
+            // 获取下载器
             Downloader downloader = ufopFactory.getDownloader(fileBean.getStorageType());
             DownloadFile downloadFile = new DownloadFile();
             downloadFile.setFileUrl(fileBean.getFileUrl());
+            // 设置Range
             Range range = new Range();
             range.setStart(start);
-
             if (start + 1024 * 1024 * 1 >= fileBean
                     .getFileSize()
                     .intValue()) {
@@ -275,25 +313,22 @@ public class FiletransferController
                 range.setLength(1024 * 1024 * 1);
             }
             downloadFile.setRange(range);
-            InputStream inputStream = downloader.getInputStream(downloadFile);
 
-            OutputStream outputStream = httpServletResponse.getOutputStream();
-            try {
+            // 获取文件流
+            try (InputStream inputStream = downloader.getInputStream(downloadFile);
+                 OutputStream outputStream = httpServletResponse.getOutputStream()) {
 
-                //返回码需要为206，代表只处理了部分请求，响应了部分数据
-
+                // 返回码需要为206，代表只处理了部分请求，响应了部分数据
                 httpServletResponse.setStatus(HttpServletResponse.SC_PARTIAL_CONTENT);
+
                 // 每次请求只返回1MB的视频流
-
                 httpServletResponse.setHeader("Accept-Ranges", "bytes");
-                //设置此次相应返回的数据范围
+                // 设置此次相应返回的数据范围
                 httpServletResponse.setHeader("Content-Range", "bytes " + start + "-" + (fileBean.getFileSize() - 1) + "/" + fileBean.getFileSize());
-                IOUtils.copy(inputStream, outputStream);
 
+                IOUtils.copy(inputStream, outputStream);
             }
             finally {
-                IOUtils.closeQuietly(inputStream);
-                IOUtils.closeQuietly(outputStream);
                 if (Objects.nonNull(downloadFile.getOssClient())) {
                     downloadFile
                             .getOssClient()

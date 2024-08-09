@@ -3,7 +3,6 @@ package com.qiwenshare.ufop.operation.preview;
 import cn.hutool.http.HttpUtil;
 import com.qiwenshare.common.operation.ImageOperation;
 import com.qiwenshare.ufop.domain.ThumbImage;
-import com.qiwenshare.ufop.exception.operation.PreviewException;
 import com.qiwenshare.ufop.operation.preview.domain.PreviewFile;
 import com.qiwenshare.ufop.util.CharsetUtils;
 import com.qiwenshare.ufop.util.UFOPUtils;
@@ -21,6 +20,7 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Objects;
 
 @Slf4j
 @Data
@@ -44,42 +44,27 @@ public abstract class Previewer
 
             File cacheFile = UFOPUtils.getCacheFile(UFOPUtils.getUploadFileUrl(name, "ico"));
             if (cacheFile.exists()) {
-                FileInputStream fis = null;
-                OutputStream outputStream = null;
-                try {
-                    fis = new FileInputStream(cacheFile);
-                    outputStream = httpServletResponse.getOutputStream();
+                try (FileInputStream fis = new FileInputStream(cacheFile);
+                     OutputStream outputStream = httpServletResponse.getOutputStream()) {
                     IOUtils.copy(fis, outputStream);
                 }
                 catch (IOException e) {
-                    e.printStackTrace();
-                }
-                finally {
-                    IOUtils.closeQuietly(fis);
-                    IOUtils.closeQuietly(outputStream);
+                    log.error("文件流拷贝异常：{}", e.getMessage(), e);
                 }
             }
             else {
-                URL url = null;
-                InputStream in = null;
-                OutputStream outputStream = null;
                 try {
-                    url = new URL(icoUrl);
+                    URL url = new URL(icoUrl);
                     HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-                    InputStream inputstream = connection.getInputStream();
-                    try {
-                        outputStream = httpServletResponse.getOutputStream();
-                        in = ImageOperation.thumbnailsImageForScale(inputstream, cacheFile, 50);
+                    try (InputStream inputstream = connection.getInputStream();
+                         InputStream in = ImageOperation.thumbnailsImageForScale(inputstream, cacheFile, 50);
+                         OutputStream outputStream = httpServletResponse.getOutputStream()) {
                         IOUtils.copy(in, outputStream);
-
                     }
                     catch (IOException e) {
-                        e.printStackTrace();
+                        log.error("文件流拷贝异常：{}", e.getMessage(), e);
                     }
                     finally {
-                        IOUtils.closeQuietly(in);
-                        IOUtils.closeQuietly(inputstream);
-                        IOUtils.closeQuietly(outputStream);
                         if (previewFile.getOssClient() != null) {
                             previewFile
                                     .getOssClient()
@@ -88,7 +73,6 @@ public abstract class Previewer
                     }
                 }
                 catch (MalformedURLException e) {
-
                     log.error("MalformedURLException, url is {}", icoUrl);
                     throw new RuntimeException(e);
                 }
@@ -97,91 +81,62 @@ public abstract class Previewer
                     throw new RuntimeException(e);
                 }
             }
-
             return;
         }
 
-        boolean isVideo = UFOPUtils.isVideoFile(FilenameUtils.getExtension(fileUrl));
+        // 获取缓存文件
         String thumbnailImgUrl = previewFile.getFileUrl();
+        boolean isVideo = UFOPUtils.isVideoFile(FilenameUtils.getExtension(fileUrl));
         if (isVideo) {
-            thumbnailImgUrl = fileUrl.replace("." + FilenameUtils.getExtension(fileUrl), ".jpg");
+            thumbnailImgUrl = fileUrl.replace(".".concat(FilenameUtils.getExtension(fileUrl)), ".jpg");
         }
-
         File cacheFile = UFOPUtils.getCacheFile(thumbnailImgUrl);
 
+        // 缓存文件存在
         if (cacheFile.exists()) {
-            FileInputStream fis = null;
-            OutputStream outputStream = null;
-            try {
-                fis = new FileInputStream(cacheFile);
-                outputStream = httpServletResponse.getOutputStream();
+            // 读取缓存文件
+            try (FileInputStream fis = new FileInputStream(cacheFile);
+                 OutputStream outputStream = httpServletResponse.getOutputStream()) {
                 IOUtils.copy(fis, outputStream);
             }
             catch (IOException e) {
                 e.printStackTrace();
             }
-            finally {
-                IOUtils.closeQuietly(fis);
-                IOUtils.closeQuietly(outputStream);
-            }
-
         }
+        // 缓存文件不存在
         else {
-            OutputStream outputStream = null;
-            InputStream in = null;
-            InputStream inputstream = null;
-            try {
-                inputstream = getInputStream(previewFile);
-            }
-            catch (PreviewException previewException) {
-                log.error(previewException.getMessage());
-                return;
-            }
-
-            try {
-                outputStream = httpServletResponse.getOutputStream();
-                in = ImageOperation.thumbnailsImageForScale(inputstream, cacheFile, 50);
+            // 获取文件流
+            try (InputStream inputstream = getInputStream(previewFile);
+                 InputStream in = ImageOperation.thumbnailsImageForScale(inputstream, cacheFile, 50);
+                 OutputStream outputStream = httpServletResponse.getOutputStream()) {
                 IOUtils.copy(in, outputStream);
-
             }
             catch (IOException e) {
                 e.printStackTrace();
             }
             finally {
-                IOUtils.closeQuietly(in);
-                IOUtils.closeQuietly(inputstream);
-                IOUtils.closeQuietly(outputStream);
-                if (previewFile.getOssClient() != null) {
+                if (Objects.nonNull(previewFile.getOssClient())) {
                     previewFile
                             .getOssClient()
                             .shutdown();
                 }
             }
-
         }
     }
 
     public void imageOriginalPreview(HttpServletResponse httpServletResponse, PreviewFile previewFile) {
-
-        InputStream inputStream = null;
-
-        OutputStream outputStream = null;
-
-        try {
-            inputStream = getInputStream(previewFile);
-            outputStream = httpServletResponse.getOutputStream();
+        // 获取文件流
+        try (InputStream inputStream = getInputStream(previewFile);
+             OutputStream outputStream = httpServletResponse.getOutputStream()) {
             byte[] bytes = IOUtils.toByteArray(inputStream);
             bytes = CharsetUtils.convertTxtCharsetToUTF8(bytes, FilenameUtils.getExtension(previewFile.getFileUrl()));
             outputStream.write(bytes);
-
         }
         catch (IOException e) {
-            e.printStackTrace();
+            log.error("图片原始预览失败：{}", e.getMessage(), e);
         }
         finally {
-            IOUtils.closeQuietly(inputStream);
-            IOUtils.closeQuietly(outputStream);
-            if (previewFile.getOssClient() != null) {
+            if (Objects.nonNull(previewFile.getOssClient())) {
                 previewFile
                         .getOssClient()
                         .shutdown();
@@ -201,14 +156,17 @@ public abstract class Previewer
                 .createGet(navUrl)
                 .execute()
                 .toString();
+
         // 从网页内容中提取favicon图标的相关信息
         String str = body.split("favicon\\d{0,3}.ico")[0];
+
         // 尝试找到以https://开头的URL
         int http = str.indexOf("https://", str.length() - 100);
         // 如果未找到，再尝试以http://开头的URL
         if (http == -1) {
             http = str.indexOf("http://", str.length() - 100);
         }
+
         // 如果仍未找到，则认为网页中没有指定favicon图标的绝对路径，需要进行拼接
         if (http == -1) {
             // 获取网址中用于拼接favicon.ico的部分
@@ -221,6 +179,7 @@ public abstract class Previewer
         else {
             navUrl = str.substring(http);
         }
+
         // 拼接favicon图标文件的URL并返回
         return navUrl + "/favicon.ico";
     }

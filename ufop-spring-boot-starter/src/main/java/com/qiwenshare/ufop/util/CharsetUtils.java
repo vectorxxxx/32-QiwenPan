@@ -31,7 +31,6 @@ public class CharsetUtils
     }
 
     public static byte[] convertTxtCharsetToUTF8(byte[] bytes, String extendName) {
-
         if (Arrays
                 .asList(UFOPUtils.TXT_FILE)
                 .contains(extendName)) {

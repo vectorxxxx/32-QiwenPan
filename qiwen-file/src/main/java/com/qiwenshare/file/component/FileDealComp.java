@@ -58,9 +58,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Base64;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.concurrent.Executor;
@@ -343,23 +341,27 @@ public class FileDealComp
      */
     public boolean checkAuthDownloadAndPreview(String shareBatchNum, String extractionCode, String token, String userFileIds, Integer platform) {
         log.debug("权限检查开始：shareBatchNum:{}, extractionCode:{}, token:{}, userFileIds{}", shareBatchNum, extractionCode, token, userFileIds);
-        if (Objects.isNull(platform) && platform == 2) {
+        if (Objects.nonNull(platform) && platform == 2) {
             return true;
         }
-        String[] userFileIdArr = userFileIds.split(",");
+        final String[] userFileIdArr = userFileIds.split(",");
         for (String userFileId : userFileIdArr) {
-
+            // 获取用户文件信息
             UserFile userFile = userFileMapper.selectById(userFileId);
             log.debug(JSON.toJSONString(userFile));
-            if ("undefined".equals(shareBatchNum) || StringUtils.isEmpty(shareBatchNum)) {
 
+            // 1、分享批次号为空
+            if ("undefined".equals(shareBatchNum) || StringUtils.isEmpty(shareBatchNum)) {
+                // 根据token获取用户id
                 String userId = userService.getUserIdByToken(token);
                 log.debug(JSON.toJSONString("当前登录session用户id：" + userId));
+                // 判断用户id是否为空
                 if (StringUtils.isEmpty(userId)) {
                     return false;
                 }
                 log.debug("文件所属用户id：" + userFile.getUserId());
                 log.debug("登录用户id:" + userId);
+                // 判断用户id是否一致
                 if (!userFile
                         .getUserId()
                         .equals(userId)) {
@@ -367,20 +369,22 @@ public class FileDealComp
                     return false;
                 }
             }
+            // 2、分享批次号不为空
             else {
-                Map<String, Object> param = new HashMap<>();
-                param.put("shareBatchNum", shareBatchNum);
-                List<Share> shareList = shareService.listByMap(param);
-                //判断批次号
+                // 根据批次号查询分享信息
+                List<Share> shareList = shareService.list(new LambdaQueryWrapper<Share>().eq(Share::getShareBatchNum, shareBatchNum));
+                // 批次号不存在
                 if (shareList.size() <= 0) {
                     log.info("分享批次号不存在，权限校验失败");
                     return false;
                 }
+
+                // 判断分享类型
                 Integer shareType = shareList
                         .get(0)
                         .getShareType();
                 if (1 == shareType) {
-                    //判断提取码
+                    // 判断提取码是否匹配
                     if (!shareList
                             .get(0)
                             .getExtractionCode()
@@ -389,8 +393,9 @@ public class FileDealComp
                         return false;
                     }
                 }
-                param.put("userFileId", userFileId);
-                List<ShareFile> shareFileList = shareFileService.listByMap(param);
+
+                // 判断用户id和分享批次号是否匹配
+                List<ShareFile> shareFileList = shareFileService.list(new LambdaQueryWrapper<ShareFile>().eq(ShareFile::getUserFileId, userFileId));
                 if (shareFileList.size() <= 0) {
                     log.info("用户id和分享批次号不匹配，权限校验失败");
                     return false;

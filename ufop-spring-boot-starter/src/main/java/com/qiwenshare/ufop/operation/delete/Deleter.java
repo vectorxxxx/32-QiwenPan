@@ -13,13 +13,17 @@ public abstract class Deleter
     public abstract void delete(DeleteFile deleteFile);
 
     protected void deleteCacheFile(DeleteFile deleteFile) {
-        if (UFOPUtils.isImageFile(FilenameUtils.getExtension(deleteFile.getFileUrl()))) {
-            File cacheFile = UFOPUtils.getCacheFile(deleteFile.getFileUrl());
-            if (cacheFile.exists()) {
-                boolean result = cacheFile.delete();
-                if (!result) {
-                    log.error("删除本地缓存文件失败！");
-                }
+        // 如果不是图片文件，则不删除本地缓存文件
+        if (!UFOPUtils.isImageFile(FilenameUtils.getExtension(deleteFile.getFileUrl()))) {
+            return;
+        }
+
+        // 获取本地缓存文件
+        File cacheFile = UFOPUtils.getCacheFile(deleteFile.getFileUrl());
+        if (cacheFile.exists()) {
+            boolean result = cacheFile.delete();
+            if (!result) {
+                log.error("删除本地缓存文件失败！");
             }
         }
     }

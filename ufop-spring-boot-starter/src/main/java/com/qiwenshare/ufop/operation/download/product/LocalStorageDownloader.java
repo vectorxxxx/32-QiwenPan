@@ -19,38 +19,43 @@ import java.io.RandomAccessFile;
 public class LocalStorageDownloader extends Downloader
 {
 
+    /**
+     * 获取输入流
+     *
+     * @param downloadFile 下载文件
+     * @return {@link InputStream }
+     */
     @Override
     public InputStream getInputStream(DownloadFile downloadFile) {
-        //设置文件路径
-        File file = new File(UFOPUtils.getStaticPath() + downloadFile.getFileUrl());
+        // 设置文件路径
+        File file = new File(UFOPUtils
+                .getStaticPath()
+                .concat(downloadFile.getFileUrl()));
 
-        InputStream inputStream = null;
         byte[] bytes = new byte[0];
-        RandomAccessFile randowAccessFile = null;
-        try {
-            if (downloadFile.getRange() != null) {
-                randowAccessFile = new RandomAccessFile(file, "r");
-                randowAccessFile.seek(downloadFile
+        if (downloadFile.getRange() != null) {
+            try (RandomAccessFile randomAccessFile = new RandomAccessFile(file, "r")) {
+                randomAccessFile.seek(downloadFile
                         .getRange()
                         .getStart());
                 bytes = new byte[downloadFile
                         .getRange()
                         .getLength()];
-                randowAccessFile.read(bytes);
+                randomAccessFile.read(bytes);
             }
-            else {
-                inputStream = new FileInputStream(file);
+            catch (IOException e) {
+                log.error("读取文件失败：{}", e.getMessage(), e);
+            }
+        }
+        else {
+            try (InputStream inputStream = new FileInputStream(file)) {
                 bytes = IOUtils.toByteArray(inputStream);
             }
+            catch (IOException e) {
+                log.error("读取文件失败：{}", e.getMessage(), e);
+            }
         }
-        catch (IOException e) {
-            e.printStackTrace();
-        }
-        finally {
-            IOUtils.closeQuietly(inputStream);
-            IOUtils.closeQuietly(randowAccessFile);
-        }
-        return new ByteArrayInputStream(bytes);
 
+        return new ByteArrayInputStream(bytes);
     }
 }
