@@ -21,7 +21,7 @@
 					placeholder="请输入文件夹名称"
 					type="textarea"
 					:autosize="{ minRows: 3, maxRows: 3 }"
-					maxlength="255"
+					maxlength="100"
 					show-word-limit
 					@keydown.enter.native.prevent
 				></el-input>

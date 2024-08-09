@@ -22,7 +22,7 @@
 					placeholder="请输入文件名称"
 					type="textarea"
 					autosize
-					maxlength="255"
+					maxlength="100"
 					show-word-limit
 				></el-input>
 			</el-form-item>

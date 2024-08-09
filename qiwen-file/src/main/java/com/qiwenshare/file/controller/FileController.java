@@ -360,22 +360,20 @@ public class FileController
             @Parameter(description = "页面数量",
                        required = true)
                     long pageCount) {
+        IPage<FileListVO> fileList;
         // 全部文件类型
         if (String
                 .valueOf(FileTypeEnum.TOTAL.getType())
                 .equals(fileType)) {
-            IPage<FileListVO> fileList = userFileService.userFileList(null, filePath, currentPage, pageCount);
-            return RestResult
-                    .<FileListVO>success()
-                    .dataList(fileList.getRecords(), fileList.getTotal());
+            fileList = userFileService.userFileList(null, filePath, currentPage, pageCount);
         }
         // 某个文件类型
         else {
-            IPage<FileListVO> fileList = userFileService.getFileByFileType(Integer.valueOf(fileType), currentPage, pageCount, SessionUtil.getUserId());
-            return RestResult
-                    .<FileListVO>success()
-                    .dataList(fileList.getRecords(), fileList.getTotal());
+            fileList = userFileService.getFileByFileType(Integer.valueOf(fileType), currentPage, pageCount, SessionUtil.getUserId());
         }
+        return RestResult
+                .<FileListVO>success()
+                .dataList(fileList.getRecords(), fileList.getTotal());
     }
 
     @Operation(summary = "批量删除文件",

@@ -164,13 +164,19 @@ public class FiletransferService implements IFiletransferService
         final String identifier = uploadFileDto.getIdentifier();
 
         // 封装上传文件对象
-        UploadFile uploadFile = new UploadFile();
-        uploadFile.setChunkNumber(uploadFileDto.getChunkNumber());  // 当前分片
-        uploadFile.setChunkSize(uploadFileDto.getChunkSize());      // 分片大小
-        uploadFile.setTotalChunks(uploadFileDto.getTotalChunks());  // 分片总数
-        uploadFile.setIdentifier(identifier);    // md5
-        uploadFile.setTotalSize(uploadFileDto.getTotalSize());      // 文件大小
-        uploadFile.setCurrentChunkSize(uploadFileDto.getCurrentChunkSize());    // 当前分片大小
+        UploadFile uploadFile = new UploadFile()
+                // 当前分片序号
+                .setChunkNumber(uploadFileDto.getChunkNumber())
+                // 当前分片大小
+                .setCurrentChunkSize(uploadFileDto.getCurrentChunkSize())
+                // 分片大小（平均大小）
+                .setChunkSize(uploadFileDto.getChunkSize())
+                // 分片总数
+                .setTotalChunks(uploadFileDto.getTotalChunks())
+                // md5
+                .setIdentifier(identifier)
+                // 文件大小
+                .setTotalSize(uploadFileDto.getTotalSize());
 
         // 获取上传器
         Uploader uploader = ufopFactory.getUploader();

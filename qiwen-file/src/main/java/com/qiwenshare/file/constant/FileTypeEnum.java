@@ -1,5 +1,10 @@
 package com.qiwenshare.file.constant;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+
+@Getter
+@AllArgsConstructor
 public enum FileTypeEnum
 {
     TOTAL(0, "全部"),
@@ -13,17 +18,4 @@ public enum FileTypeEnum
 
     private int type;
     private String desc;
-
-    FileTypeEnum(int type, String desc) {
-        this.type = type;
-        this.desc = desc;
-    }
-
-    public int getType() {
-        return type;
-    }
-
-    public String getDesc() {
-        return desc;
-    }
 }

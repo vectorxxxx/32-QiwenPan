@@ -79,6 +79,7 @@ public class ShareController
         final String userId = SessionUtil.getUserId();
         ShareFileVO shareSecretVO = new ShareFileVO();
 
+        // 保存分享信息
         String uuid = UUID
                 .randomUUID()
                 .toString()
@@ -98,9 +99,11 @@ public class ShareController
         share.setShareBatchNum(uuid);
         shareService.save(share);
 
+        // 保存分享文件信息
         List<ShareFile> saveFileList = new ArrayList<>();
-        String userFileIds = shareFileDTO.getUserFileIds();
-        String[] userFileIdList = userFileIds.split(",");
+        String[] userFileIdList = shareFileDTO
+                .getUserFileIds()
+                .split(",");
         for (String userFileId : userFileIdList) {
             UserFile userFile = userFileService.getById(userFileId);
             if (userFile
