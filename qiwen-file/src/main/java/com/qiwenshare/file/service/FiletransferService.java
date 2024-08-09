@@ -44,7 +44,6 @@ import com.qiwenshare.ufop.operation.upload.domain.UploadFileResult;
 import com.qiwenshare.ufop.util.UFOPUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -56,7 +55,6 @@ import java.awt.image.BufferedImage;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -295,8 +293,7 @@ public class FiletransferService implements IFiletransferService
         if (StringUtils.isEmpty(str)) {
             return "";
         }
-        if (java.nio.charset.Charset
-                .forName("ISO-8859-1")
+        if (StandardCharsets.ISO_8859_1
                 .newEncoder()
                 .canEncode(str)) {
             byte[] bytes = str.getBytes(StandardCharsets.ISO_8859_1);
@@ -307,128 +304,137 @@ public class FiletransferService implements IFiletransferService
 
     @Override
     public void downloadFile(HttpServletResponse httpServletResponse, DownloadFileDTO downloadFileDTO) {
+        // 获取用户文件信息
         UserFile userFile = userFileMapper.selectById(downloadFileDTO.getUserFileId());
-
+        // 1、判断是否是文件
         if (userFile.isFile()) {
-
+            // 获取文件信息
             FileBean fileBean = fileMapper.selectById(userFile.getFileId());
+            // 获取下载器
             Downloader downloader = ufopFactory.getDownloader(fileBean.getStorageType());
             if (Objects.isNull(downloader)) {
                 log.error("下载失败，文件存储类型不支持下载，storageType:{}", fileBean.getStorageType());
                 throw new DownloadException("下载失败");
             }
+            // 下载文件
             DownloadFile downloadFile = new DownloadFile();
-
             downloadFile.setFileUrl(fileBean.getFileUrl());
             httpServletResponse.setContentLengthLong(fileBean.getFileSize());
             downloader.download(httpServletResponse, downloadFile);
         }
+        // 2、判断是否是文件夹
         else {
-
+            // 获取用户文件列表
             QiwenFile qiwenFile = new QiwenFile(userFile.getFilePath(), userFile.getFileName(), true);
             List<UserFile> userFileList = userFileMapper.selectUserFileByLikeRightFilePath(qiwenFile.getPath(), userFile.getUserId());
             List<String> userFileIds = userFileList
                     .stream()
                     .map(UserFile::getUserFileId)
                     .collect(Collectors.toList());
-
+            // 下载用户文件列表
             downloadUserFileList(httpServletResponse, userFile.getFilePath(), userFile.getFileName(), userFileIds);
         }
     }
 
     @Override
     public void downloadUserFileList(HttpServletResponse httpServletResponse, String filePath, String fileName, List<String> userFileIds) {
-        String staticPath = UFOPUtils.getStaticPath();
-        String tempPath = staticPath + "temp" + File.separator;
-        File tempDirFile = new File(tempPath);
+        // 创建临时目录
+        final String staticPath = UFOPUtils.getStaticPath();
+        final String tempPath = staticPath
+                .concat("temp")
+                .concat(File.separator);
+        final File tempDirFile = new File(tempPath);
         if (!tempDirFile.exists()) {
             tempDirFile.mkdirs();
         }
 
-        FileOutputStream f = null;
-        try {
-            f = new FileOutputStream(tempPath + fileName + ".zip");
-        }
-        catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-        CheckedOutputStream csum = new CheckedOutputStream(f, new Adler32());
-        ZipOutputStream zos = new ZipOutputStream(csum);
-        BufferedOutputStream out = new BufferedOutputStream(zos);
-
-        try {
+        // 创建压缩文件
+        try (final FileOutputStream f = new FileOutputStream(tempPath
+                .concat(fileName)
+                .concat(".zip"));
+             final CheckedOutputStream cos = new CheckedOutputStream(f, new Adler32());
+             final ZipOutputStream zos = new ZipOutputStream(cos);
+             final BufferedOutputStream out = new BufferedOutputStream(zos)) {
+            // 遍历用户文件列表
             for (String userFileId : userFileIds) {
-                UserFile userFile1 = userFileMapper.selectById(userFileId);
-                if (userFile1.isFile()) {
-                    FileBean fileBean = fileMapper.selectById(userFile1.getFileId());
+                // 获取用户文件信息
+                UserFile userFile = userFileMapper.selectById(userFileId);
+                // 1、判断是否是文件
+                if (userFile.isFile()) {
+                    // 获取文件信息
+                    FileBean fileBean = fileMapper.selectById(userFile.getFileId());
+                    // 获取下载器
                     Downloader downloader = ufopFactory.getDownloader(fileBean.getStorageType());
                     if (Objects.isNull(downloader)) {
                         log.error("下载失败，文件存储类型不支持下载，storageType:{}", fileBean.getStorageType());
                         throw new UploadException("下载失败");
                     }
+                    // 下载文件
                     DownloadFile downloadFile = new DownloadFile();
                     downloadFile.setFileUrl(fileBean.getFileUrl());
-                    InputStream inputStream = downloader.getInputStream(downloadFile);
-                    BufferedInputStream bis = new BufferedInputStream(inputStream);
-                    try {
-                        QiwenFile qiwenFile = new QiwenFile(StrUtil.removePrefix(userFile1.getFilePath(), filePath), userFile1.getFileName() + "." + userFile1.getExtendName(),
-                                false);
+                    try (InputStream inputStream = downloader.getInputStream(downloadFile);
+                         BufferedInputStream bis = new BufferedInputStream(inputStream)) {
+                        // 创建压缩文件
+                        QiwenFile qiwenFile = new QiwenFile(StrUtil.removePrefix(userFile.getFilePath(), filePath), userFile.getFileName() + "." + userFile.getExtendName(), false);
                         zos.putNextEntry(new ZipEntry(qiwenFile.getPath()));
 
+                        // 读取文件
+                        int i;
                         byte[] buffer = new byte[1024];
-                        int i = bis.read(buffer);
-                        while (i != -1) {
+                        while ((i = bis.read(buffer)) != -1) {
                             out.write(buffer, 0, i);
-                            i = bis.read(buffer);
                         }
                     }
                     catch (IOException e) {
-                        log.error("" + e);
-                        e.printStackTrace();
+                        log.error("下载过程中出现异常：{}", e.getMessage(), e);
                     }
                     finally {
-                        IOUtils.closeQuietly(bis);
                         try {
                             out.flush();
                         }
                         catch (IOException e) {
-                            e.printStackTrace();
+                            log.error("刷新输出流失败：{}", e.getMessage(), e);
                         }
                     }
                 }
+                // 2、否则为文件夹
                 else {
-                    QiwenFile qiwenFile = new QiwenFile(StrUtil.removePrefix(userFile1.getFilePath(), filePath), userFile1.getFileName(), true);
-                    // 空文件夹的处理
+                    // 创建压缩文件
+                    QiwenFile qiwenFile = new QiwenFile(StrUtil.removePrefix(userFile.getFilePath(), filePath), userFile.getFileName(), true);
                     zos.putNextEntry(new ZipEntry(qiwenFile.getPath() + QiwenFile.separator));
-                    // 没有文件，不需要文件的copy
                     zos.closeEntry();
                 }
             }
-
         }
         catch (Exception e) {
-            log.error("压缩过程中出现异常:" + e);
+            log.error("压缩过程中出现异常：{}", e.getMessage(), e);
         }
-        finally {
-            try {
-                out.close();
-            }
-            catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
+
+        // 下传压缩文件
         String zipPath = "";
         try {
+            // 获取下载器
             Downloader downloader = ufopFactory.getDownloader(StorageTypeEnum.LOCAL.getCode());
             DownloadFile downloadFile = new DownloadFile();
-            downloadFile.setFileUrl("temp" + File.separator + fileName + ".zip");
-            File tempFile = new File(UFOPUtils.getStaticPath() + downloadFile.getFileUrl());
+            downloadFile.setFileUrl("temp"
+                    .concat(File.separator)
+                    .concat(fileName)
+                    .concat(".zip"));
+            File tempFile = new File(UFOPUtils
+                    .getStaticPath()
+                    .concat(downloadFile.getFileUrl()));
             httpServletResponse.setContentLengthLong(tempFile.length());
+            // 下载文件
             downloader.download(httpServletResponse, downloadFile);
-            zipPath = UFOPUtils.getStaticPath() + "temp" + File.separator + fileName + ".zip";
+            zipPath = UFOPUtils
+                    .getStaticPath()
+                    .concat("temp")
+                    .concat(File.separator)
+                    .concat(fileName)
+                    .concat(".zip");
         }
         catch (Exception e) {
-            //org.apache.catalina.connector.ClientAbortException: java.io.IOException: Connection reset by peer
+            //org.apache.catalina.connector.ClientAbortException: java.io.IOException: 你的主机中的软件中止了一个已建立的连接。
             if (e
                     .getMessage()
                     .contains("ClientAbortException")) {
@@ -437,9 +443,9 @@ public class FiletransferService implements IFiletransferService
             else {
                 log.error("下传zip文件出现异常：{}", e.getMessage());
             }
-
         }
         finally {
+            // 无论压缩文件下载成功与否都要删除
             File file = new File(zipPath);
             if (file.exists()) {
                 file.delete();
@@ -449,8 +455,11 @@ public class FiletransferService implements IFiletransferService
 
     @Override
     public void previewFile(HttpServletResponse httpServletResponse, PreviewDTO previewDTO) {
+        // 获取用户文件信息
         UserFile userFile = userFileMapper.selectById(previewDTO.getUserFileId());
+        // 获取文件信息
         FileBean fileBean = fileMapper.selectById(userFile.getFileId());
+        // 获取预览器
         Previewer previewer = ufopFactory.getPreviewer(fileBean.getStorageType());
         if (Objects.isNull(previewer)) {
             log.error("预览失败，文件存储类型不支持预览，storageType:{}", fileBean.getStorageType());
@@ -460,6 +469,7 @@ public class FiletransferService implements IFiletransferService
         previewFile.setFileUrl(fileBean.getFileUrl());
         try {
             if ("true".equals(previewDTO.getIsMin())) {
+                // 获取缩略图预览器
                 previewer.imageThumbnailPreview(httpServletResponse, previewFile);
             }
             else {
