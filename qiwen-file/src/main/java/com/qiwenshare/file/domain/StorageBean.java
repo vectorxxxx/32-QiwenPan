@@ -4,6 +4,8 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.Accessors;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -24,6 +26,8 @@ import javax.persistence.UniqueConstraint;
        })
 @Entity
 @TableName("storage")
+@NoArgsConstructor
+@Accessors(chain = true)
 public class StorageBean
 {
 
@@ -44,15 +48,11 @@ public class StorageBean
 
     @Column(columnDefinition = "varchar(25) comment '修改时间'")
     private String modifyTime;
+
     @Column(columnDefinition = "bigint(20) comment '修改用户id'")
     private Long modifyUserId;
-
-    public StorageBean() {
-
-    }
 
     public StorageBean(String userId) {
         this.userId = userId;
     }
-
 }

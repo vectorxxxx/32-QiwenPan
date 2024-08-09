@@ -3,7 +3,6 @@ package com.qiwenshare.file.controller;
 import com.qiwenshare.common.anno.MyLog;
 import com.qiwenshare.common.result.RestResult;
 import com.qiwenshare.common.util.MimeUtils;
-import com.qiwenshare.common.util.security.JwtUser;
 import com.qiwenshare.common.util.security.SessionUtil;
 import com.qiwenshare.file.api.IFileService;
 import com.qiwenshare.file.api.IFiletransferService;
@@ -335,7 +334,6 @@ public class FiletransferController
                             .shutdown();
                 }
             }
-
         }
         else {
             filetransferService.previewFile(httpServletResponse, previewDTO);
@@ -350,22 +348,23 @@ public class FiletransferController
                     method = RequestMethod.GET)
     @ResponseBody
     public RestResult<StorageBean> getStorage() {
+        final String userId = SessionUtil.getUserId();
 
-        JwtUser sessionUserBean = SessionUtil.getSession();
-        StorageBean storageBean = new StorageBean();
+        // 获取用户占用存储大小
+        Long storageSize = filetransferService.selectStorageSizeByUserId(userId);
+        // 获取用户总存储大小
+        Long totalStorageSize = storageService.getTotalStorageSize(userId);
 
-        storageBean.setUserId(sessionUserBean.getUserId());
+        // 封装
+        StorageBean storage = new StorageBean()
+                .setUserId(userId)
+                .setStorageSize(storageSize)
+                .setTotalStorageSize(totalStorageSize);
 
-        Long storageSize = filetransferService.selectStorageSizeByUserId(sessionUserBean.getUserId());
-        StorageBean storage = new StorageBean();
-        storage.setUserId(sessionUserBean.getUserId());
-        storage.setStorageSize(storageSize);
-        Long totalStorageSize = storageService.getTotalStorageSize(sessionUserBean.getUserId());
-        storage.setTotalStorageSize(totalStorageSize);
+        // 返回
         return RestResult
                 .<StorageBean>success()
                 .data(storage);
-
     }
 
 }
